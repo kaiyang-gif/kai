@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>吴林丹作品集 | 摄影与视觉艺术</title>
+    
+    <style>
+        /* ===================================================
+           【基础快捷配置】
+           =================================================== */
+        :root {
+            --site-logo: "LINDAN WU";
+            --avatar-url: url('./yRXuXvy4sQ4.jfif');
+            --home-bg-url: url('./DENG3893.jpg');
+            --bgm-cover-url: url('./RENQujV_-ZU.jfif'); /* CD唱片封面图片 */
+            
+            --douyin-link: "https://douyin.com";
+            --youtube-link: "https://youtube.com";
+            --xiaohongshu-link: "https://xiaohongshu.com";
+        }
+
+        /* ===================================================
+           核心样式设计
+           =================================================== */
+        html { scroll-behavior: smooth; }
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0b0b0b; color: #fff; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+        body.modal-open { overflow: hidden; } 
+        a { text-decoration: none; color: #fff; transition: color 0.3s ease; }
+        a:hover { color: #a8a8a8; }
+
+        /* 防下载核心 CSS */
+        img, video {
+            -webkit-user-drag: none; /* 禁止拖拽 */
+            -webkit-touch-callout: none; /* 禁止iOS长按弹出菜单 */
+            user-select: none; /* 禁止选中 */
+        }
+
+        /* 场景全局动效入场基类 */
+        .reveal-item { 
+            opacity: 0; 
+            transform: translateY(40px); 
+            transition: opacity 1.2s cubic-bezier(0.215, 0.610, 0.355, 1), transform 1.2s cubic-bezier(0.215, 0.610, 0.355, 1); 
+        }
+        .reveal-item.revealed { opacity: 1; transform: translateY(0); }
+        .delay-1 { transition-delay: 0.15s; }
+        .delay-2 { transition-delay: 0.3s; }
+        .delay-3 { transition-delay: 0.45s; }
+        .delay-4 { transition-delay: 0.6s; }
+
+        header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; box-sizing: border-box; background: rgba(11, 11, 11, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .logo { font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; z-index: 1001; }
+        .logo::before { content: var(--site-logo); }
+        nav ul { list-style: none; display: flex; gap: 30px; margin: 0; padding: 0; transition: all 0.4s ease; }
+        nav ul li a { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+
+        .menu-toggle { display: none; flex-direction: column; cursor: pointer; gap: 6px; z-index: 1001; }
+        .menu-toggle .bar { width: 22px; height: 1.5px; background-color: #fff; transition: 0.3s; }
+
+        /* 首屏视差与高级渐变效果 */
+        #home { 
+            height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 24px; box-sizing: border-box; 
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), var(--home-bg-url) center/cover no-repeat;
+            background-attachment: fixed; /* 视差滚动基础 */
+        }
+        .avatar { width: 110px; height: 110px; border-radius: 50%; background: var(--avatar-url) center/cover no-repeat; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.2); transform: scale(0.9); opacity: 0; animation: scaleIn 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; }
+        
+        /* 文字高奢文字裁切出现效果 */
+        .hero-title-wrap { overflow: hidden; margin-bottom: 12px; }
+        .hero-title { font-size: 3.2rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; transform: translateY(100%); animation: textSlideUp 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards 0.4s; }
+        .hero-subtitle { font-size: 1.1rem; color: #aaa; max-width: 540px; margin: 0 auto 36px auto; font-weight: 300; opacity: 0; transform: translateY(20px); animation: fadeInBlur 1s ease forwards 1s; }
+        
+        .btn { display: inline-block; padding: 12px 32px; border: 1px solid #fff; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 2px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); opacity: 0; animation: fadeInBlur 1s ease forwards 1.2s; position: relative; overflow: hidden; z-index: 1; }
+        .btn::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 0; background: #fff; z-index: -1; transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+        .btn:hover { color: #000; }
+        .btn:hover::after { height: 100%; }
+
+        @keyframes scaleIn { to { transform: scale(1); opacity: 1; } }
+        @keyframes textSlideUp { to { transform: translateY(0); } }
+        @keyframes fadeInBlur { to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+
+        #portfolio { padding: 120px 5%; text-align: center; background-color: #0b0b0b; }
+        .section-title { font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 60px; font-weight: 600; position: relative; display: inline-block; }
+        .section-title::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 30px; height: 1px; background: #fff; transition: width 0.4s ease; }
+        .section-title:hover::after { width: 60px; }
+        
+        /* 画廊高级卡片交互 */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+        .gallery-item { position: relative; overflow: hidden; aspect-ratio: 16 / 10; background-color: #161616; cursor: pointer; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.8s ease; }
+        .gallery-item:hover img { transform: scale(1.06); filter: brightness(0.7) blur(1px); }
+        
+        .gallery-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.4s ease; }
+        .gallery-item:hover .gallery-overlay { opacity: 1; }
+        .gallery-overlay span { font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid transparent; padding-bottom: 4px; transform: translateY(15px); transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.5s; }
+        .gallery-item:hover .gallery-overlay span { transform: translateY(0); border-color: #fff; }
+
+        /* 高级拟真CD黑胶唱片背景音乐控件 */
+        .bgm-ctrl {
+            position: fixed; bottom: 30px; left: 30px; width: 56px; height: 56px;
+            background: #111; border: 3px solid #222; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; z-index: 9999; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.8);
+            overflow: hidden; perspective: 1000px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bgm-ctrl:hover { transform: scale(1.1); border-color: #444; }
+        
+        .cd-disk {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+        }
+        
+        .cd-cover {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bgm-cover-url, var(--avatar-url)) center/cover no-repeat;
+            border-radius: 50%; opacity: 0.65; transition: opacity 0.3s;
+        }
+        
+        .cd-vinyl-lines {
+            position: absolute; top: 3px; left: 3px; right: 3px; bottom: 3px;
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.15), 0 0 0 6px rgba(255,255,255,0.03), 0 0 0 9px rgba(0,0,0,0.2);
+            pointer-events: none; z-index: 2;
+        }
+        
+        .bgm-ctrl::after {
+            content: ''; position: absolute; width: 12px; height: 12px; background: #0b0b0b;
+            border-radius: 50%; border: 2px solid #222; box-shadow: 0 0 4px rgba(0,0,0,0.8);
+            z-index: 3; pointer-events: none;
+        }
+        
+        .bgm-ctrl.playing .cd-disk { animation: cdRotate 8s linear infinite; }
+        .bgm-ctrl.playing .cd-cover { opacity: 1; }
+
+        @keyframes cdRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===================================================
+           网格弹窗画廊 (第一级弹窗)
+           =================================================== */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: rgba(5, 5, 5, 0.98); z-index: 2000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1); overflow-y: auto; padding-top: 80px; }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        
+        .close-btn { position: fixed; top: 25px; right: 40px; font-size: 2.5rem; color: #fff; cursor: pointer; z-index: 2001; line-height: 1; transition: color 0.3s, transform 0.3s; }
+        .close-btn:hover { color: #a8a8a8; transform: rotate(90deg); }
+        .modal-title { text-align: center; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; margin-top: 0; }
+        
+        .modal-grid { column-count: 3; column-gap: 20px; padding: 0 5%; max-width: 1400px; margin: 0 auto 60px auto; }
+        
+        .media-wrapper { position: relative; margin-bottom: 20px; break-inside: avoid; border-radius: 4px; overflow: hidden; background-color: #1a1a1a; box-shadow: 0 5px 15px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .modal.active .media-wrapper { opacity: 1; transform: translateY(0); }
+        .modal.active .media-wrapper:nth-child(1) { transition-delay: 0.05s; }
+        .modal.active .media-wrapper:nth-child(2) { transition-delay: 0.1s; }
+        .modal.active .media-wrapper:nth-child(3) { transition-delay: 0.15s; }
+        .modal.active .media-wrapper:nth-child(4) { transition-delay: 0.2s; }
+        .modal.active .media-wrapper:nth-child(5) { transition-delay: 0.25s; }
+
+        .media-wrapper img, .media-wrapper video { width: 100%; display: block; border-radius: 4px; cursor: zoom-in; transition: transform 0.4s ease; }
+        .media-wrapper:hover img, .media-wrapper:hover video { transform: scale(1.02); }
+        .media-wrapper video { padding-bottom: 2px; }
+
+        /* 互动按钮 */
+        .action-btn { position: absolute; top: 15px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10; }
+        .action-btn:hover { transform: scale(1.15); background: rgba(0, 0, 0, 0.9); border: 1px solid rgba(255,255,255,0.2); }
+        .action-btn svg { width: 16px; height: 16px; transition: all 0.3s ease; }
+        
+        .like-btn { right: 15px; }
+        .like-btn svg { fill: rgba(255, 255, 255, 0.2); stroke: #fff; stroke-width: 2px; }
+        .like-btn.liked svg { fill: #ff3b30; stroke: #ff3b30; }
+        .like-btn.liked { animation: heartBurst 0.4s ease; }
+        
+        .comment-btn { right: 60px; }
+        .comment-btn svg { fill: none; stroke: #fff; stroke-width: 2px; stroke-linejoin: round; }
+        
+        .share-btn { right: 105px; } 
+        .share-btn svg { fill: none; stroke: #fff; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* ===================================================
+           单图放大与评论系统 (第二级弹窗)
+           =================================================== */
+        .lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.98); z-index: 3000;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow: hidden;
+        }
+        .lightbox.active { opacity: 1; pointer-events: auto; }
+        
+        .lightbox-content-box {
+            position: relative; max-width: 90vw; max-height: 90vh;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            transform: scale(0.95);
+        }
+        .lightbox.active .lightbox-content-box { transform: scale(1); }
+        .lightbox.comments-open .lightbox-content-box { transform: translateX(-160px) scale(0.95); }
+
+        .lightbox-content-box img, .lightbox-content-box video {
+            max-width: 100%; max-height: 90vh; object-fit: contain;
+            border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        
+        .lightbox-close { position: absolute; top: 20px; right: 30px; font-size: 3rem; color: #fff; cursor: pointer; z-index: 3001; transition: color 0.3s, transform 0.3s; line-height: 1; }
+        .lightbox-close:hover { color: #a8a8a8; transform: rotate(90deg); }
+        
+        .nav-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            font-size: 2.5rem; color: rgba(255,255,255,0.4); cursor: pointer;
+            padding: 20px; user-select: none; z-index: 3001; transition: color 0.3s, transform 0.3s;
+        }
+        .nav-arrow:hover { color: #fff; transform: translateY(-50%) scale(1.15); }
+        .nav-prev { left: 20px; }
+        .nav-next { right: 20px; }
+
+        .lightbox-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 0.9rem; letter-spacing: 2px; color: #666; z-index: 3001; }
+
+        /* 评论侧边栏丝滑抽屉动效 */
+        .comment-sidebar {
+            position: absolute; right: -340px; top: 0; width: 340px; height: 100%;
+            background: rgba(15, 15, 15, 0.95); border-left: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; flex-direction: column; transition: right 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 3005; box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        }
+        .lightbox.comments-open .comment-sidebar { right: 0; }
+        
+        .comment-header { padding: 24px 20px; font-size: 1.1rem; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px; }
+        .close-comments-btn { cursor: pointer; font-size: 1.5rem; color: #666; transition: 0.3s; }
+        .close-comments-btn:hover { color: #fff; }
+        
+        .comment-list { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; }
+        .comment-list::-webkit-scrollbar { display: none; }
+        .comment-item { background: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(255,255,255,0.02); animation: fadeInUp 0.4s ease both; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .comment-user { font-weight: bold; color: #888; margin-bottom: 4px; display: block; font-size: 0.75rem; }
+        .comment-empty { text-align: center; color: #444; margin-top: 40px; font-size: 0.9rem; letter-spacing: 1px; }
+
+        .comment-input-area { padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 10px; background: #0c0c0c; }
+        .comment-input-area input { flex: 1; padding: 12px 18px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); background: #141414; color: #fff; outline: none; font-size: 0.85rem; transition: border-color 0.3s; }
+        .comment-input-area input:focus { border-color: rgba(255,255,255,0.4); }
+        .comment-input-area button { padding: 8px 20px; border-radius: 24px; border: none; background: #fff; color: #000; font-weight: bold; cursor: pointer; transition: background 0.3s, transform 0.2s; font-size: 0.85rem; }
+        .comment-input-area button:hover { background: #e0e0e0; transform: scale(1.02); }
+
+        @keyframes heartBurst { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+        
+        /* 吐司弹窗高级动效 */
+        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(255, 255, 255, 0.95); color: #000; padding: 14px 28px; border-radius: 30px; font-size: 0.9rem; font-weight: 600; opacity: 0; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.3); pointer-events: none; letter-spacing: 1px; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        #contact { padding: 120px 5%; background-color: #0f0f0f; text-align: center; }
+        .contact-info { margin-bottom: 40px; font-size: 1.1rem; color: #ccc; font-weight: 300; }
+        .social-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 40px; flex-wrap: wrap; }
+        .social-links a { font-size: 0.85rem; letter-spacing: 1px; border: 1px solid #222; padding: 12px 28px; border-radius: 2px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+        .social-links a:hover { border-color: #fff; background: #fff; color: #000; transform: translateY(-4px); }
+        footer { padding: 40px; text-align: center; font-size: 0.75rem; color: #444; border-top: 1px solid rgba(255,255,255,0.02); letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: flex; }
+            nav ul { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: #0b0b0b; flex-direction: column; justify-content: center; align-items: center; gap: 36px; transform: translateY(-100%); opacity: 0; transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
+            nav ul.active { transform: translateY(0); opacity: 1; }
+            nav ul li a { font-size: 1.3rem; }
+            .hero-title { font-size: 2.2rem; }
+            #portfolio, #contact { padding: 80px 6%; }
+            .gallery-grid { grid-template-columns: 1fr; gap: 20px; }
+            .gallery-item { aspect-ratio: 1 / 1; }
+            .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 40%); align-items: flex-end; padding: 20px; justify-content: flex-start; }
+            .gallery-overlay span { transform: translateY(0); border-color: transparent; }
+            
+            .modal-grid { column-count: 1; } 
+            .close-btn { right: 20px; top: 15px; font-size: 2.8rem; }
+            
+            .action-btn { top: 10px; width: 34px; height: 34px; } 
+            .like-btn { right: 10px; }
+            .comment-btn { right: 52px; }
+            .share-btn { right: 94px; }
+            
+            .nav-arrow { font-size: 2rem; padding: 10px; }
+            .nav-prev { left: 0px; }
+            .nav-next { right: 0px; }
+            .lightbox-close { top: 10px; right: 20px; }
+
+            /* 移动端评论面板 */
+            .comment-sidebar { width: 100%; right: 0; top: auto; bottom: -100%; height: 60vh; border-top: 1px solid rgba(255,255,255,0.08); border-left: none; transition: bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+            .lightbox.comments-open .comment-sidebar { bottom: 0; }
+            .lightbox.comments-open .lightbox-content-box { transform: translateY(-8vh) scale(0.9); }
+        }
+    </style>
+<script type="text/javascript" nonce="4cef72e78f3247b39c4f0888ad3" src="//local.adguard.org?ts=1780670707781&amp;type=content-script&amp;dmn=contribution.usercontent.google.com&amp;url=https%3A%2F%2Fcontribution.usercontent.google.com%2Fdownload%3Fc%3DCgxiYXJkX3N0b3JhZ2USTBIJdGVtcF9kYXRhGj8KMGMxNzNhOTdhMzU4MjI4YjMwMDA2NTM4MzYwNTcxNWI4MDcwMmM3MTVlYjM3ZTU4ZhILEgcQoa665YINGAE%26filename%3Dindex-v6.html%26opi%3D103135050&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4cef72e78f3247b39c4f0888ad3" src="//local.adguard.org?ts=1780670707781&amp;name=AdGuard%20Extra&amp;type=user-script"></script></head>
+<body>
+
+    <!-- 背景音乐核心组件（支持本地音乐） -->
+    <audio id="site-bgm" loop preload="auto">
+        <source src="./bgm.mp3" type="audio/mp3">
+    </audio>
+    
+    <!-- 精美CD黑胶唱片旋转控件 -->
+    <div class="bgm-ctrl" id="bgm-btn" title="背景音乐播放/暂停">
+        <div class="cd-disk">
+            <div class="cd-cover"></div>
+            <div class="cd-vinyl-lines"></div>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo"></div>
+        <div class="menu-toggle" id="mobile-menu">
+            <span class="bar"></span><span class="bar"></span>
+        </div>
+        <nav>
+            <ul id="nav-list">
+                <li><a href="#" class="nav-link">Home</a></li>
+                <li><a href="#portfolio" class="nav-link">Portfolio</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="home">
+        <div class="avatar"></div>
+        <div class="hero-title-wrap">
+            <h1 class="hero-title">Art in Every Frame</h1>
+        </div>
+        <p class="hero-subtitle">大光圈“摄”定风采世界，小快门“照”就经典瞬间</p>
+        <a href="#portfolio" class="btn">View Work</a>
+    </section>
+
+    <section id="portfolio">
+        <h2 class="section-title reveal-item">Portfolio</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item reveal-item delay-1" data-module="module1">
+                <img src="./N10auyEVst8.jfif" alt="封面1">
+                <div class="gallery-overlay"><span>Artistic Portraits</span></div>
+            </div>
+            <div class="gallery-item reveal-item delay-2" data-module="module2">
+                <img src="./J39X2xX_8CQ.jfif" alt="封面2">
+                <div class="gallery-overlay"><span>Cinematic Video</span></div>
+            </div>
+            <div class="gallery-item reveal-item delay-3" data-module="module3">
+                <img src="./photo-1517960413843-0aee8e2b3285.avif" alt="封面3">
+                <div class="gallery-overlay"><span>Visual Edits</span></div>
+            </div>
+            <div class="gallery-item reveal-item delay-4" data-module="module4">
+                <img src="./headphones_audio_black_134032_3840x2160.jpg" alt="封面4">
+                <div class="gallery-overlay"><span>Studio Work</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2 class="section-title reveal-item">Get in Touch</h2>
+        <p class="contact-info reveal-item delay-1">合作交流请联系邮箱: 2433764403@qq.com</p>
+        <div class="social-links reveal-item delay-2">
+            <a href="#" id="link-ins" target="_blank">douyin</a>
+            <a href="#" id="link-yt" target="_blank">YouTube</a>
+            <a href="#" id="link-vimeo" target="_blank">xiaohongshu</a>
+        </div>
+    </section>
+
+    <footer>&copy; 2026 Visual Studio. All rights reserved.</footer>
+
+    <!-- 第一级弹窗：网格瀑布流 -->
+    <div id="gallery-modal" class="modal">
+        <span class="close-btn" id="close-modal">&times;</span>
+        <h3 class="modal-title" id="modal-title">Category Title</h3>
+        <div class="modal-grid" id="modal-grid"></div>
+    </div>
+
+    <!-- 第二级弹窗：独立放大查看器 (Lightbox) -->
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close" id="close-lightbox">&times;</span>
+        <div class="nav-arrow nav-prev" id="lightbox-prev">&#10094;</div>
+        
+        <div class="lightbox-content-box" id="lightbox-content-box">
+            <!-- JS 动态注入 -->
+        </div>
+        
+        <div class="nav-arrow nav-next" id="lightbox-next">&#10095;</div>
+        <div class="lightbox-counter" id="lightbox-counter">1 / 1</div>
+
+        <!-- 评论侧边栏 -->
+        <div class="comment-sidebar" id="comment-sidebar">
+            <div class="comment-header">
+                全部评论
+                <span class="close-comments-btn" id="close-comments-btn">&times;</span>
+            </div>
+            <div class="comment-list" id="comment-list">
+                <!-- 评论内容 -->
+            </div>
+            <div class="comment-input-area">
+                <input type="text" id="comment-input" placeholder="写下你的想法...">
+                <button id="send-comment-btn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="toast" class="toast">操作成功</div>
+
+    <script>
+        // ==========================================
+        // 核心功能一：防下载系统
+        // ==========================================
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO') {
+                e.preventDefault();
+                showToast("版权所有，禁止下载 🔒");
+            }
+        });
+
+        // ==========================================
+        // 核心功能二：视差滚动与高级滚动入场
+        // ==========================================
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const home = document.getElementById('home');
+            if (home) {
+                home.style.backgroundPositionY = `${scrolled * 0.35}px`;
+            }
+        });
+
+        const revealCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    observer.unobserve(entry.target);
+                }
+            });
+        };
+        const revealObserver = new IntersectionObserver(revealCallback, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        document.querySelectorAll('.reveal-item').forEach(item => revealObserver.observe(item));
+
+        // ==========================================
+        // 核心功能三：背景音乐系统（手机端/微信端极致兼容优化版）
+        // ==========================================
+        const bgm = document.getElementById('site-bgm');
+        const bgmBtn = document.getElementById('bgm-btn');
+        let musicStarted = false;
+        let bgmAutoPausedByVideo = false;
+
+        function toggleBGM() {
+            if (bgm.paused) {
+                bgm.play().then(() => {
+                    bgmBtn.classList.add('playing');
+                    bgmAutoPausedByVideo = false;
+                }).catch(err => {
+                    console.log("播放失败，请检查本地音乐文件 bgm.mp3 是否存在。");
+                });
+            } else {
+                bgm.pause();
+                bgmBtn.classList.remove('playing');
+                bgmAutoPausedByVideo = false;
+            }
+        }
+        
+        bgmBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleBGM(); });
+        bgmBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); toggleBGM(); });
+
+        function startMusicOnInteraction() {
+            if (!musicStarted) {
+                bgm.play().then(() => {
+                    bgmBtn.classList.add('playing');
+                    musicStarted = true;
+                    removeInteractionListeners();
+                }).catch(() => {});
+            }
+        }
+
+        function removeInteractionListeners() {
+            document.removeEventListener('click', startMusicOnInteraction);
+            document.removeEventListener('touchstart', startMusicOnInteraction);
+            document.removeEventListener('scroll', startMusicOnInteraction);
+        }
+
+        document.addEventListener('click', startMusicOnInteraction);
+        document.addEventListener('touchstart', startMusicOnInteraction);
+        document.addEventListener('scroll', startMusicOnInteraction, { passive: true });
+
+        document.addEventListener("WeixinJSBridgeReady", function () {
+            if (!musicStarted) {
+                bgm.play().then(() => {
+                    bgmBtn.classList.add('playing');
+                    musicStarted = true;
+                    removeInteractionListeners();
+                }).catch(() => {});
+            }
+        }, false);
+
+
+        /* =========================================================================
+           【图库基础与交互数据交互区】
+           ========================================================================= */
+        const portfolioData = {
+            "module1": {
+                title: "Artistic Portraits",
+                items: [
+                    { type: "image", src: "./DENG3883.jpg" },
+                    { type: "image", src: "./DENG3874.jpg" },
+                    { type: "image", src: "./DENG3993.jpg" },
+                    { type: "image", src: "./DENG3852.jpg" }
+                ]
+            },
+            "module2": {
+                title: "Cinematic Video",
+                items: [
+                    { type: "video", src: "https://www.w3schools.com/html/mov_bbb.mp4" },
+                    { type: "image", src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" },
+                    { type: "video", src: "./12.mp4" }
+                ]
+            },
+            "module3": {
+                title: "Visual Edits",
+                items: [
+                    { type: "image", src: "./photo-1780254865273-908136e98d5a.avif" },
+                    { type: "image", src: "./photo-1780139883668-325a9b3b328d.avif" },
+                    { type: "image", src: "./black-and-white-photography-animal-pet-portrait-cat-512255-pxhere.com.jpg" },
+                    { type: "image", src: "./photo-1780516053602-7fc79c63ee6c.avif" }
+                ]
+            },
+            "module4": {
+                title: "Studio Work",
+                items: [
+                    { type: "image", src: "./photo-1776965767257-6b07d891a0a3.avif" },
+                    { type: "image", src: "./photo-1779113940974-97e682627830.avif" },
+                    { type: "image", src: "./tree-nature-branch-blossom-winter-plant-615744-pxhere.com.jpg" },
+                    { type: "image", src: "./photo-1778434505732-baa2e78041a6.avif" }
+                ]
+            }
+        };
+
+        const rootStyles = getComputedStyle(document.documentElement);
+        document.getElementById('link-ins').href = rootStyles.getPropertyValue('--douyin-link').replace(/"/g, '').trim();
+        document.getElementById('link-yt').href = rootStyles.getPropertyValue('--youtube-link').replace(/"/g, '').trim();
+        document.getElementById('link-vimeo').href = rootStyles.getPropertyValue('--xiaohongshu-link').replace(/"/g, '').trim();
+
+        const menuToggle = document.querySelector('#mobile-menu');
+        const navList = document.querySelector('#nav-list');
+        const navLinks = document.querySelectorAll('.nav-link');
+        menuToggle.addEventListener('click', () => navList.classList.toggle('active'));
+        navLinks.forEach(link => link.addEventListener('click', () => navList.classList.remove('active')));
+
+        /* =========================================================================
+           系统交互核心逻辑 (第一级网格、点赞、分享、评论、Lightbox)
+           ========================================================================= */
+        const modules = document.querySelectorAll('.gallery-item');
+        const modal = document.getElementById('gallery-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalGrid = document.getElementById('modal-grid');
+        const toast = document.getElementById('toast');
+
+        const lightbox = document.getElementById('lightbox');
+        const lightboxContentBox = document.getElementById('lightbox-content-box');
+        const closeLightboxBtn = document.getElementById('close-lightbox');
+        const lightboxPrev = document.getElementById('lightbox-prev');
+        const lightboxNext = document.getElementById('lightbox-next');
+        const lightboxCounter = document.getElementById('lightbox-counter');
+        
+        let currentLightboxData = []; 
+        let currentLightboxIndex = 0; 
+
+        let commentsDatabase = JSON.parse(localStorage.getItem('photoComments')) || {};
+        const commentListDOM = document.getElementById('comment-list');
+        const commentInput = document.getElementById('comment-input');
+        const sendCommentBtn = document.getElementById('send-comment-btn');
+        const closeCommentsBtn = document.getElementById('close-comments-btn');
+
+        const heartSvg = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+        const shareSvg = `<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`;
+        const commentSvg = `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+
+        let likedMedia = JSON.parse(localStorage.getItem('likedMedia')) || {};
+        let toastTimeout;
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2500);
+        }
+
+        modules.forEach(item => {
+            item.addEventListener('click', () => {
+                const moduleId = item.getAttribute('data-module');
+                const data = portfolioData[moduleId];
+                
+                if(data) {
+                    modalTitle.textContent = data.title;
+                    modalGrid.innerHTML = ''; 
+                    
+                    data.items.forEach((mediaItem, index) => {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'media-wrapper';
+
+                        let domElement;
+                        if (mediaItem.type === 'video') {
+                            domElement = document.createElement('video');
+                            domElement.src = mediaItem.src;
+                            domElement.muted = true;
+                            domElement.loop = true;
+                            domElement.playsInline = true;
+                            domElement.autoplay = true; 
+                        } else {
+                            domElement = document.createElement('img');
+                            domElement.src = mediaItem.src;
+                            domElement.loading = "lazy";
+                        }
+
+                        domElement.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openLightbox(data.items, index, false);
+                        });
+
+                        const shareBtn = document.createElement('div');
+                        shareBtn.className = 'action-btn share-btn';
+                        shareBtn.innerHTML = shareSvg;
+                        shareBtn.title = "转发分享";
+                        shareBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const absoluteUrl = new URL(mediaItem.src, window.location.href).href;
+                            if (navigator.share) {
+                                navigator.share({ 
+                                    title: 'Visual Studio 作品分享', 
+                                    text: '快来看看这个精彩的作品！',
+                                    url: absoluteUrl 
+                                }).catch(() => {});
+                            } else {
+                                navigator.clipboard.writeText(absoluteUrl).then(() => showToast("专属转发链接已复制 ✨")).catch(() => showToast("复制失败"));
+                            }
+                        });
+
+                        const commentBtn = document.createElement('div');
+                        commentBtn.className = 'action-btn comment-btn';
+                        commentBtn.innerHTML = commentSvg;
+                        commentBtn.title = "查看/添加评论";
+                        commentBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openLightbox(data.items, index, true);
+                        });
+
+                        const likeBtn = document.createElement('div');
+                        likeBtn.className = 'action-btn like-btn';
+                        likeBtn.innerHTML = heartSvg;
+                        if(likedMedia[mediaItem.src]) likeBtn.classList.add('liked');
+
+                        likeBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (likeBtn.classList.contains('liked')) {
+                                likeBtn.classList.remove('liked');
+                                delete likedMedia[mediaItem.src]; 
+                            } else {
+                                likeBtn.classList.add('liked');
+                                likedMedia[mediaItem.src] = true; 
+                            }
+                            localStorage.setItem('likedMedia', JSON.stringify(likedMedia));
+                        });
+
+                        wrapper.appendChild(domElement);
+                        wrapper.appendChild(shareBtn);
+                        wrapper.appendChild(commentBtn);
+                        wrapper.appendChild(likeBtn);
+                        modalGrid.appendChild(wrapper);
+                    });
+
+                    modal.classList.add('active');
+                    document.body.classList.add('modal-open'); 
+                }
+            });
+        });
+
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+            setTimeout(() => { modalGrid.innerHTML = ''; }, 400); 
+        }
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
+
+        // ==========================================
+        // Lightbox 与智能手机端视频通道音轨联动逻辑
+        // ==========================================
+        function openLightbox(items, index, openComments = false) {
+            currentLightboxData = items;
+            currentLightboxIndex = index;
+            updateLightboxContent();
+            lightbox.classList.add('active');
+            
+            if(openComments) {
+                lightbox.classList.add('comments-open');
+            } else {
+                lightbox.classList.remove('comments-open');
+            }
+        }
+
+        function updateLightboxContent() {
+            // 切换前，如果原先有正在运行的手机端视频，必须立即在系统级别强制中断卸载
+            cleanupActiveVideo();
+
+            lightboxContentBox.innerHTML = '';
+            const currentItem = currentLightboxData[currentLightboxIndex];
+            lightboxCounter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxData.length}`;
+
+            if (currentItem.type === 'video') {
+                const video = document.createElement('video');
+                video.src = currentItem.src;
+                video.controls = true; 
+                video.autoplay = true; 
+                video.playsInline = true;
+                video.webkitPlaysInline = true; // 强制苹果iOS内置浏览器原位播放，不跳出全屏系统播放器
+                video.controlsList = "nodownload";
+                lightboxContentBox.appendChild(video);
+
+                // 【手机端硬核互斥】：只要当前准备渲染或播放手机视频，立即无条件切断背景音乐
+                if (!bgm.paused) {
+                    bgm.pause();
+                    bgmBtn.classList.remove('playing');
+                    bgmAutoPausedByVideo = true; 
+                }
+            } else {
+                const img = document.createElement('img');
+                img.src = currentItem.src;
+                lightboxContentBox.appendChild(img);
+
+                // 切换到普通大图时，如果是被视频自动挂起的背景音乐，顺畅唤醒
+                if (bgmAutoPausedByVideo) {
+                    bgm.play().then(() => {
+                        bgmBtn.classList.add('playing');
+                    }).catch(() => {});
+                    bgmAutoPausedByVideo = false; 
+                }
+            }
+
+            renderComments(currentItem.src);
+        }
+
+        // 精准清理视频进程，释放手机解码通道
+        function cleanupActiveVideo() {
+            const activeVideo = lightboxContentBox.querySelector('video');
+            if (activeVideo) {
+                activeVideo.pause();
+                activeVideo.src = ""; // 切断视频网络流，防止手机后台隐蔽驻留音频流
+                activeVideo.load();   // 强制手机硬件层重置视频组件
+            }
+        }
+
+        function renderComments(mediaSrc) {
+            commentListDOM.innerHTML = '';
+            const comments = commentsDatabase[mediaSrc] || [];
+            
+            if(comments.length === 0) {
+                commentListDOM.innerHTML = '<div class="comment-empty">暂无评论，来抢沙发吧！</div>';
+                return;
+            }
+
+            comments.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'comment-item';
+                div.innerHTML = `<span class="comment-user">匿名访客</span>${c}`;
+                commentListDOM.appendChild(div);
+            });
+            
+            setTimeout(() => { commentListDOM.scrollTop = commentListDOM.scrollHeight; }, 50);
+        }
+
+        function submitComment() {
+            const text = commentInput.value.trim();
+            if(!text) return showToast("评论内容不能为空");
+
+            const currentSrc = currentLightboxData[currentLightboxIndex].src;
+            if(!commentsDatabase[currentSrc]) commentsDatabase[currentSrc] = [];
+            
+            commentsDatabase[currentSrc].push(text);
+            localStorage.setItem('photoComments', JSON.stringify(commentsDatabase));
+            
+            commentInput.value = '';
+            renderComments(currentSrc);
+            showToast("评论发布成功！");
+        }
+
+        sendCommentBtn.addEventListener('click', submitComment);
+        commentInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') submitComment(); });
+        closeCommentsBtn.addEventListener('click', () => lightbox.classList.remove('comments-open'));
+
+        function closeLightbox() {
+            // 【手机端硬核联动】：用户关闭视频时，优先执行系统级硬件流断开操作
+            cleanupActiveVideo();
+
+            lightbox.classList.remove('active');
+            lightbox.classList.remove('comments-open');
+            setTimeout(() => { lightboxContentBox.innerHTML = ''; }, 300);
+            
+            // 确认手机端视频完全销毁关闭后，背景音乐恢复原位连续播放
+            if (bgmAutoPausedByVideo) {
+                bgm.play().then(() => {
+                    bgmBtn.classList.add('playing');
+                }).catch(() => {});
+                bgmAutoPausedByVideo = false; 
+            }
+        }
+
+        lightboxPrev.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxData.length) % currentLightboxData.length;
+            updateLightboxContent();
+        });
+
+        lightboxNext.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxData.length;
+            updateLightboxContent();
+        });
+
+        closeLightboxBtn.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox || e.target === document.querySelector('.lightbox-content-box')) {
+                closeLightbox();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') lightboxPrev.click();
+            if (e.key === 'ArrowRight') lightboxNext.click();
+        });
+
+    </script>
+</body>
+</html>
