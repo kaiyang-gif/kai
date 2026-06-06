@@ -36,18 +36,13 @@
         a { text-decoration: none; color: #fff; transition: color 0.25s ease; }
         a:hover { color: #a8a8a8; }
 
-        /* 防下载与移动端视频交互核心 CSS */
+        /* 防下载核心 CSS */
         img, video { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
-        
         /* 透明防下载遮罩层 */
         .gallery-item::after, .media-wrapper::after, .lightbox-content-box::after { content: ''; position: absolute; inset: 0; z-index: 2; }
         .gallery-overlay { z-index: 3; }
         .action-btn { z-index: 10; }
-        
-        /* 【关键修复】让网格中的视频失去鼠标/触控响应，彻底穿透，让点击事件 100% 交给父容器触发灯箱 */
-        .media-wrapper video { position: relative; z-index: 1; pointer-events: none; padding-bottom: 2px; } 
-        /* 灯箱里的视频需要能点击控制条，恢复响应 */
-        .lightbox-content-box video { position: relative; z-index: 10; pointer-events: auto; }
+        .media-wrapper video, .lightbox-content-box video { position: relative; z-index: 10; } 
 
         /* 场景全局动效入场基类 (强制 3D 硬件加速) */
         .reveal-item { opacity: 0; transform: translate3d(0, 40px, 0); will-change: transform, opacity; transition: opacity var(--transition-pc), transform var(--transition-pc); }
@@ -167,11 +162,12 @@
         .modal.active .media-wrapper:nth-child(3) { transition-delay: 0.15s; }
         .modal.active .media-wrapper:nth-child(4) { transition-delay: 0.2s; }
 
-        .media-wrapper img, .media-wrapper video { width: 100%; display: block; border-radius: 4px; transition: transform 0.4s ease; will-change: transform; }
+        .media-wrapper img, .media-wrapper video { width: 100%; display: block; border-radius: 4px; transition: transform 0.4s ease; position: relative; z-index: 1; will-change: transform; }
         .media-wrapper:hover img, .media-wrapper:hover video { transform: scale(1.02) translate3d(0,0,0); }
+        .media-wrapper video { padding-bottom: 2px; }
 
         /* 悬浮操作栏 */
-        .action-btn { position: absolute; top: 15px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); transform: translate3d(0,0,0); will-change: transform, background; z-index: 10; }
+        .action-btn { position: absolute; top: 15px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); transform: translate3d(0,0,0); will-change: transform, background; }
         .action-btn:hover { transform: scale(1.15) translate3d(0,0,0); background: rgba(0, 0, 0, 0.9); border: 1px solid rgba(255,255,255,0.2); }
         .action-btn svg { width: 16px; height: 16px; transition: all 0.3s ease; }
         .like-btn { right: 15px; }
@@ -242,31 +238,37 @@
         .comment-input-area button:hover { background: #e0e0e0; transform: scale(1.02) translate3d(0,0,0); }
 
         /* ===================================================
-           移动端深度适配
+           移动端深度适配 (极速反馈与防抖布局)
            =================================================== */
         @media (max-width: 768px) {
+            /* 基础滚动与布局调整 */
             section { padding: 80px 6%; }
             .hero-title { font-size: 2.4rem; }
-            #home { background-attachment: scroll; } 
+            #home { background-attachment: scroll; } /* 消除 iOS 滚动视差带来的严重卡顿 */
 
+            /* 导航与菜单联动 */
             header { padding: 15px 5%; }
             .menu-toggle { display: flex; position: absolute; right: 5%; }
             nav ul { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background-color: #0b0b0b; flex-direction: column; justify-content: center; align-items: center; gap: 36px; transform: translate3d(0, -100%, 0); opacity: 0; transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform, opacity; z-index: -1; }
             nav ul.active { transform: translate3d(0, 0, 0); opacity: 1; }
             nav ul li a { font-size: 1.3rem; }
             
+            /* 关于我们版块 */
             .about-wrapper { flex-direction: column; text-align: center; gap: 40px; }
             .about-img { width: 100%; max-width: 300px; height: 350px; }
             .about-title { font-size: 1.8rem; }
 
+            /* 作品集网格重构以适应小屏 */
             .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
             .gallery-item { aspect-ratio: 1 / 1; }
             .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 45%); align-items: flex-end; padding: 20px; justify-content: flex-start; }
             .gallery-overlay span { transform: translate3d(0,0,0); border-color: transparent; }
             
+            /* 弹窗与交互触控区放大 */
             .modal-grid { column-count: 1; } 
             .close-btn { right: 20px; top: 15px; font-size: 2.8rem; width: 44px; height: 44px; text-align: center; }
             
+            /* 操作按钮放大 */
             .action-btn { top: 12px; width: 40px; height: 40px; } 
             .like-btn { right: 12px; }
             .comment-btn { right: 60px; }
@@ -279,10 +281,12 @@
             .lightbox-close { top: 10px; right: 15px; padding: 10px; }
             .bgm-ctrl { bottom: 20px; left: 20px; width: 48px; height: 48px; }
 
+            /* 弹窗动画响应提速 */
             .reveal-item { transition-duration: var(--transition-mobile) !important; }
             .modal, .lightbox { transition-duration: 0.2s; }
             .media-wrapper { transition-duration: 0.25s; }
 
+            /* 移动端侧栏交互改为由下至上，体验更佳 */
             .comment-sidebar { width: 100%; right: 0; left: 0; top: auto; bottom: 0; height: 65vh; border-top: 1px solid rgba(255,255,255,0.08); border-left: none; transform: translate3d(0, 100%, 0); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
             .lightbox.comments-open .comment-sidebar { transform: translate3d(0, 0, 0); }
             .lightbox.comments-open .lightbox-content-box { transform: translate3d(0, -10vh, 0) scale(0.85); }
@@ -424,6 +428,7 @@
     <div id="toast" class="toast">操作成功</div>
 
     <script>
+        // 防右键菜单提取
         document.addEventListener('contextmenu', function(e) {
             if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO' || e.target.classList.contains('gallery-item') || e.target.classList.contains('media-wrapper')) {
                 e.preventDefault();
@@ -431,16 +436,21 @@
             }
         });
 
+        // 视差滚动优化与导航栏动态效果
         let ticking = false;
         const header = document.getElementById('site-header');
         window.addEventListener('scroll', () => {
             if (!ticking) {
                 window.requestAnimationFrame(() => {
                     const scrolled = window.pageYOffset;
+                    
+                    // 仅在非移动端启用视差滚动，避免 iOS Safari 掉帧
                     if (window.innerWidth > 768) {
                         const home = document.getElementById('home');
                         if (home) home.style.backgroundPositionY = `${scrolled * 0.35}px`;
                     }
+
+                    // 导航栏滚动紧凑模式
                     if (scrolled > 50) {
                         header.style.padding = '10px 5%';
                         header.style.background = 'rgba(11, 11, 11, 0.95)';
@@ -454,6 +464,7 @@
             }
         }, { passive: true });
 
+        // 硬件加速动效监听器
         const revealCallback = (entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -465,6 +476,7 @@
         const revealObserver = new IntersectionObserver(revealCallback, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
         document.querySelectorAll('.reveal-item').forEach(item => revealObserver.observe(item));
 
+        // 背景音乐系统
         const bgm = document.getElementById('site-bgm');
         const bgmBtn = document.getElementById('bgm-btn');
         let musicStarted = false;
@@ -515,6 +527,7 @@
             }
         }, false);
 
+        // 数据区 - 添加了 poster 字段用于兼容移动端首帧
         const portfolioData = {
             "module1": { 
                 title: "人像艺术", 
@@ -555,7 +568,25 @@
                     { type: "image", src: "./DENG3852.jpg" }
                 ] 
             },
-            "module2": { title: "电影视频", items: [{ type: "video", src: "./348656.mp4" }, { type: "image", src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }, { type: "video", src: "./12.mp4" }] },
+            "module2": { 
+                title: "电影视频", 
+                items: [
+                    { 
+                        type: "video", 
+                        src: "./348656.mp4",
+                        poster: "./348656_cover.jpg" // 建议在本地放入该视频截图以完美适配安卓
+                    }, 
+                    { 
+                        type: "image", 
+                        src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
+                    }, 
+                    { 
+                        type: "video", 
+                        src: "./12.mp4",
+                        poster: "./12_cover.jpg" // 建议在本地放入该视频截图以完美适配安卓
+                    }
+                ] 
+            },
             "module3": { title: "城市烟火", items: [{ type: "image", src: "./photo-1780254865273-908136e98d5a.avif" }, { type: "image", src: "./photo-1780139883668-325a9b3b328d.avif" }, { type: "image", src: "./black-and-white-photography-animal-pet-portrait-cat-512255-pxhere.com.jpg" }, { type: "image", src: "./photo-1780516053602-7fc79c63ee6c.avif" }] },
             "module4": { 
                 title: "自然风光", 
@@ -576,11 +607,13 @@
             }
         };
 
+        // DOM 元素与外部链接绑定
         const rootStyles = getComputedStyle(document.documentElement);
         document.getElementById('link-ins').href = rootStyles.getPropertyValue('--douyin-link').replace(/"/g, '').trim();
         document.getElementById('link-yt').href = rootStyles.getPropertyValue('--youtube-link').replace(/"/g, '').trim();
         document.getElementById('link-vimeo').href = rootStyles.getPropertyValue('--xiaohongshu-link').replace(/"/g, '').trim();
 
+        // 移动端菜单联动控制
         const menuToggle = document.querySelector('#mobile-menu');
         const navList = document.querySelector('#nav-list');
         const navLinks = document.querySelectorAll('.nav-link');
@@ -647,15 +680,24 @@
                         wrapper.className = 'media-wrapper';
 
                         let domElement;
+                        // 视频创建部分 - 增强了移动端和X5内核兼容属性
                         if (mediaItem.type === 'video') {
                             domElement = document.createElement('video');
                             domElement.src = mediaItem.src;
                             domElement.muted = true;
                             domElement.loop = true;
-                            // 修复网格视频 iOS 全屏拦截
-                            domElement.setAttribute('playsinline', '');
-                            domElement.setAttribute('webkit-playsinline', '');
                             domElement.autoplay = true; 
+                            
+                            // 兼容性核心补充
+                            domElement.setAttribute('playsinline', 'true');
+                            domElement.setAttribute('webkit-playsinline', 'true');
+                            domElement.setAttribute('x5-video-player-type', 'h5');
+                            domElement.setAttribute('x5-playsinline', 'true');
+                            domElement.setAttribute('preload', 'metadata');
+                            
+                            if (mediaItem.poster) {
+                                domElement.setAttribute('poster', mediaItem.poster);
+                            }
                         } else {
                             domElement = document.createElement('img');
                             domElement.src = mediaItem.src;
@@ -758,19 +800,11 @@
                 const video = document.createElement('video');
                 video.src = currentItem.src;
                 video.controls = true; 
-                // 修复灯箱视频 iOS 强制全屏拦截
-                video.setAttribute('playsinline', '');
-                video.setAttribute('webkit-playsinline', '');
+                video.autoplay = true; 
+                video.playsInline = true;
+                video.webkitPlaysInline = true; 
                 video.controlsList = "nodownload";
                 lightboxContentBox.appendChild(video);
-
-                // 处理移动端非静音视频的自动播放拦截
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                        console.log("浏览器限制了自动播放，需用户手动点击控制条播放");
-                    });
-                }
 
                 if (!bgm.paused) {
                     bgm.pause();
