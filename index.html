@@ -527,7 +527,7 @@
             }
         }, false);
 
-        // 数据区 - 添加了 poster 字段用于兼容移动端首帧
+        // 数据区
         const portfolioData = {
             "module1": { 
                 title: "人像艺术", 
@@ -568,25 +568,7 @@
                     { type: "image", src: "./DENG3852.jpg" }
                 ] 
             },
-            "module2": { 
-                title: "电影视频", 
-                items: [
-                    { 
-                        type: "video", 
-                        src: "./348656.mp4",
-                        poster: "./348656_cover.jpg" // 建议在本地放入该视频截图以完美适配安卓
-                    }, 
-                    { 
-                        type: "image", 
-                        src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
-                    }, 
-                    { 
-                        type: "video", 
-                        src: "./12.mp4",
-                        poster: "./12_cover.jpg" // 建议在本地放入该视频截图以完美适配安卓
-                    }
-                ] 
-            },
+            "module2": { title: "电影视频", items: [{ type: "video", src: "./348656.mp4" }, { type: "image", src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }, { type: "video", src: "./12.mp4" }] },
             "module3": { title: "城市烟火", items: [{ type: "image", src: "./photo-1780254865273-908136e98d5a.avif" }, { type: "image", src: "./photo-1780139883668-325a9b3b328d.avif" }, { type: "image", src: "./black-and-white-photography-animal-pet-portrait-cat-512255-pxhere.com.jpg" }, { type: "image", src: "./photo-1780516053602-7fc79c63ee6c.avif" }] },
             "module4": { 
                 title: "自然风光", 
@@ -680,24 +662,13 @@
                         wrapper.className = 'media-wrapper';
 
                         let domElement;
-                        // 视频创建部分 - 增强了移动端和X5内核兼容属性
                         if (mediaItem.type === 'video') {
                             domElement = document.createElement('video');
                             domElement.src = mediaItem.src;
                             domElement.muted = true;
                             domElement.loop = true;
+                            domElement.playsInline = true;
                             domElement.autoplay = true; 
-                            
-                            // 兼容性核心补充
-                            domElement.setAttribute('playsinline', 'true');
-                            domElement.setAttribute('webkit-playsinline', 'true');
-                            domElement.setAttribute('x5-video-player-type', 'h5');
-                            domElement.setAttribute('x5-playsinline', 'true');
-                            domElement.setAttribute('preload', 'metadata');
-                            
-                            if (mediaItem.poster) {
-                                domElement.setAttribute('poster', mediaItem.poster);
-                            }
                         } else {
                             domElement = document.createElement('img');
                             domElement.src = mediaItem.src;
