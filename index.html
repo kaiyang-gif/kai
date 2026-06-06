@@ -2,303 +2,307 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>吴林丹作品集 | 摄影与视觉艺术</title>
     
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         /* ===================================================
-           【基础快捷配置】
+           【基础配置】
            =================================================== */
         :root {
             --site-logo: "LINDAN WU";
-            --avatar-url: url('./yRXuXvy4sQ4.jfif');
+            --avatar-url: url('./2222.png');
             --home-bg-url: url('./DENG3893.jpg');
-            --bgm-cover-url: url('./RENQujV_-ZU.jfif'); /* CD唱片封面图片 */
+            --bgm-cover-url: url('./RENQujV_-ZU.jfif'); 
             
-            --douyin-link: "https://douyin.com";
+            --douyin-link: "https://www.douyin.com/user/self?from_tab_name=main";
             --youtube-link: "https://youtube.com";
-            --xiaohongshu-link: "https://xiaohongshu.com";
+            --xiaohongshu-link: "https://www.xiaohongshu.com/user/profile/62b99f62000000001902abfd";
+            
+            --transition-pc: 1s cubic-bezier(0.215, 0.610, 0.355, 1);
+            --transition-mobile: 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         /* ===================================================
-           核心样式设计
+           全局重置与硬件加速优化
            =================================================== */
         html { scroll-behavior: smooth; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0b0b0b; color: #fff; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
         body.modal-open { overflow: hidden; } 
-        a { text-decoration: none; color: #fff; transition: color 0.3s ease; }
+        a { text-decoration: none; color: #fff; transition: color 0.25s ease; }
         a:hover { color: #a8a8a8; }
 
         /* 防下载核心 CSS */
-        img, video {
-            -webkit-user-drag: none; /* 禁止拖拽 */
-            -webkit-touch-callout: none; /* 禁止iOS长按弹出菜单 */
-            user-select: none; /* 禁止选中 */
-        }
+        img, video { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
+        /* 透明防下载遮罩层 */
+        .gallery-item::after, .media-wrapper::after, .lightbox-content-box::after { content: ''; position: absolute; inset: 0; z-index: 2; }
+        .gallery-overlay { z-index: 3; }
+        .action-btn { z-index: 10; }
+        .media-wrapper video, .lightbox-content-box video { position: relative; z-index: 10; } 
 
-        /* 场景全局动效入场基类 */
-        .reveal-item { 
-            opacity: 0; 
-            transform: translateY(40px); 
-            transition: opacity 1.2s cubic-bezier(0.215, 0.610, 0.355, 1), transform 1.2s cubic-bezier(0.215, 0.610, 0.355, 1); 
-        }
-        .reveal-item.revealed { opacity: 1; transform: translateY(0); }
-        .delay-1 { transition-delay: 0.15s; }
-        .delay-2 { transition-delay: 0.3s; }
-        .delay-3 { transition-delay: 0.45s; }
-        .delay-4 { transition-delay: 0.6s; }
+        /* 场景全局动效入场基类 (强制 3D 硬件加速) */
+        .reveal-item { opacity: 0; transform: translate3d(0, 40px, 0); will-change: transform, opacity; transition: opacity var(--transition-pc), transform var(--transition-pc); }
+        .reveal-item.revealed { opacity: 1; transform: translate3d(0, 0, 0); }
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+        .delay-4 { transition-delay: 0.4s; }
 
-        header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; box-sizing: border-box; background: rgba(11, 11, 11, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        /* ===================================================
+           导航与首屏
+           =================================================== */
+        header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; background: rgba(11, 11, 11, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.03); transform: translate3d(0,0,0); transition: padding 0.3s ease; }
         .logo { font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; z-index: 1001; }
         .logo::before { content: var(--site-logo); }
-        nav ul { list-style: none; display: flex; gap: 30px; margin: 0; padding: 0; transition: all 0.4s ease; }
-        nav ul li a { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+        nav ul { list-style: none; display: flex; gap: 30px; margin: 0; padding: 0; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+        nav ul li a { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; position: relative; }
+        nav ul li a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: #fff; transition: width 0.3s ease; }
+        nav ul li a:hover::after { width: 100%; }
 
-        .menu-toggle { display: none; flex-direction: column; cursor: pointer; gap: 6px; z-index: 1001; }
-        .menu-toggle .bar { width: 22px; height: 1.5px; background-color: #fff; transition: 0.3s; }
+        /* 汉堡菜单按钮动效 */
+        .menu-toggle { display: none; flex-direction: column; cursor: pointer; gap: 5px; z-index: 1001; width: 26px; height: 20px; justify-content: center; }
+        .menu-toggle .bar { width: 100%; height: 1.5px; background-color: #fff; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; transform-origin: center; }
+        .menu-toggle.active .bar:nth-child(1) { transform: translateY(3.25px) rotate(45deg); }
+        .menu-toggle.active .bar:nth-child(2) { transform: translateY(-3.25px) rotate(-45deg); }
 
-        /* 首屏视差与高级渐变效果 */
-        #home { 
-            height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 24px; box-sizing: border-box; 
-            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), var(--home-bg-url) center/cover no-repeat;
-            background-attachment: fixed; /* 视差滚动基础 */
-        }
-        .avatar { width: 110px; height: 110px; border-radius: 50%; background: var(--avatar-url) center/cover no-repeat; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.2); transform: scale(0.9); opacity: 0; animation: scaleIn 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; }
+        #home { height: 100vh; height: 100dvh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 24px; background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), var(--home-bg-url) center/cover no-repeat; background-attachment: fixed; will-change: background-position; }
+        .avatar { width: 110px; height: 110px; border-radius: 50%; background: var(--avatar-url) center/cover no-repeat; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.2); transform: scale(0.9) translate3d(0,0,0); opacity: 0; animation: scaleIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; will-change: transform, opacity; }
         
-        /* 文字高奢文字裁切出现效果 */
         .hero-title-wrap { overflow: hidden; margin-bottom: 12px; }
-        .hero-title { font-size: 3.2rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; transform: translateY(100%); animation: textSlideUp 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards 0.4s; }
-        .hero-subtitle { font-size: 1.1rem; color: #aaa; max-width: 540px; margin: 0 auto 36px auto; font-weight: 300; opacity: 0; transform: translateY(20px); animation: fadeInBlur 1s ease forwards 1s; }
+        .hero-title { font-size: 3.2rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; transform: translate3d(0, 100%, 0); animation: textSlideUp 1s cubic-bezier(0.25, 1, 0.5, 1) forwards 0.3s; will-change: transform; }
+        .hero-subtitle { font-size: 1.1rem; color: #aaa; max-width: 540px; margin: 0 auto 36px auto; font-weight: 300; opacity: 0; transform: translate3d(0, 20px, 0); animation: fadeInBlur 0.8s ease forwards 0.8s; will-change: transform, opacity, filter; }
         
-        .btn { display: inline-block; padding: 12px 32px; border: 1px solid #fff; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 2px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); opacity: 0; animation: fadeInBlur 1s ease forwards 1.2s; position: relative; overflow: hidden; z-index: 1; }
+        .btn { display: inline-block; padding: 12px 32px; border: 1px solid #fff; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 2px; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); opacity: 0; animation: fadeInBlur 0.8s ease forwards 1s; position: relative; overflow: hidden; z-index: 1; will-change: transform, opacity; }
         .btn::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 0; background: #fff; z-index: -1; transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
         .btn:hover { color: #000; }
         .btn:hover::after { height: 100%; }
 
-        @keyframes scaleIn { to { transform: scale(1); opacity: 1; } }
-        @keyframes textSlideUp { to { transform: translateY(0); } }
-        @keyframes fadeInBlur { to { opacity: 1; transform: translateY(0); filter: blur(0); } }
-
-        #portfolio { padding: 120px 5%; text-align: center; background-color: #0b0b0b; }
-        .section-title { font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 60px; font-weight: 600; position: relative; display: inline-block; }
-        .section-title::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 30px; height: 1px; background: #fff; transition: width 0.4s ease; }
-        .section-title:hover::after { width: 60px; }
-        
-        /* 画廊高级卡片交互 */
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
-        .gallery-item { position: relative; overflow: hidden; aspect-ratio: 16 / 10; background-color: #161616; cursor: pointer; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.8s ease; }
-        .gallery-item:hover img { transform: scale(1.06); filter: brightness(0.7) blur(1px); }
-        
-        .gallery-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.4s ease; }
-        .gallery-item:hover .gallery-overlay { opacity: 1; }
-        .gallery-overlay span { font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid transparent; padding-bottom: 4px; transform: translateY(15px); transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.5s; }
-        .gallery-item:hover .gallery-overlay span { transform: translateY(0); border-color: #fff; }
-
-        /* 高级拟真CD黑胶唱片背景音乐控件 */
-        .bgm-ctrl {
-            position: fixed; bottom: 30px; left: 30px; width: 56px; height: 56px;
-            background: #111; border: 3px solid #222; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; z-index: 9999; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.8);
-            overflow: hidden; perspective: 1000px;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .bgm-ctrl:hover { transform: scale(1.1); border-color: #444; }
-        
-        .cd-disk {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            border-radius: 50%; display: flex; justify-content: center; align-items: center;
-        }
-        
-        .cd-cover {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bgm-cover-url, var(--avatar-url)) center/cover no-repeat;
-            border-radius: 50%; opacity: 0.65; transition: opacity 0.3s;
-        }
-        
-        .cd-vinyl-lines {
-            position: absolute; top: 3px; left: 3px; right: 3px; bottom: 3px;
-            border: 1px solid rgba(255,255,255,0.06); border-radius: 50%;
-            box-shadow: 0 0 0 3px rgba(0,0,0,0.15), 0 0 0 6px rgba(255,255,255,0.03), 0 0 0 9px rgba(0,0,0,0.2);
-            pointer-events: none; z-index: 2;
-        }
-        
-        .bgm-ctrl::after {
-            content: ''; position: absolute; width: 12px; height: 12px; background: #0b0b0b;
-            border-radius: 50%; border: 2px solid #222; box-shadow: 0 0 4px rgba(0,0,0,0.8);
-            z-index: 3; pointer-events: none;
-        }
-        
-        .bgm-ctrl.playing .cd-disk { animation: cdRotate 8s linear infinite; }
-        .bgm-ctrl.playing .cd-cover { opacity: 1; }
-
-        @keyframes cdRotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes scaleIn { to { transform: scale(1) translate3d(0,0,0); opacity: 1; } }
+        @keyframes textSlideUp { to { transform: translate3d(0,0,0); } }
+        @keyframes fadeInBlur { to { opacity: 1; transform: translate3d(0,0,0); filter: blur(0); } }
 
         /* ===================================================
-           网格弹窗画廊 (第一级弹窗)
+           内容版块 (关于、作品集、足迹、联系)
            =================================================== */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: rgba(5, 5, 5, 0.98); z-index: 2000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1); overflow-y: auto; padding-top: 80px; }
-        .modal.active { opacity: 1; pointer-events: auto; }
+        section { padding: 120px 5%; }
+        #about { background-color: #111; display: flex; justify-content: center; align-items: center; }
+        .about-wrapper { max-width: 1100px; display: flex; gap: 60px; align-items: center; width: 100%; }
+        .about-img { width: 320px; height: 420px; border-radius: 4px; background: var(--avatar-url) center/cover no-repeat; box-shadow: 0 15px 35px rgba(0,0,0,0.4); flex-shrink: 0; position: relative; }
+        .about-img::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); border-radius: 4px; }
+        .about-content { flex: 1; }
+        .about-title { font-size: 2rem; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; font-weight: 600; display: inline-block; border-bottom: 1px solid #fff; padding-bottom: 10px; }
+        .about-subtitle { font-size: 1.2rem; color: #a8a8a8; margin-bottom: 24px; font-weight: 300; letter-spacing: 1px; }
+        .about-desc { font-size: 0.95rem; line-height: 1.8; color: #ccc; margin-bottom: 15px; }
+
+        #portfolio { text-align: center; background-color: #0b0b0b; }
+        .section-title { font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 60px; font-weight: 600; position: relative; display: inline-block; }
+        .section-title::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 30px; height: 1px; background: #fff; transition: width 0.3s ease; }
+        .section-title:hover::after { width: 60px; }
         
-        .close-btn { position: fixed; top: 25px; right: 40px; font-size: 2.5rem; color: #fff; cursor: pointer; z-index: 2001; line-height: 1; transition: color 0.3s, transform 0.3s; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+        .gallery-item { position: relative; overflow: hidden; aspect-ratio: 16 / 10; background-color: #161616; cursor: pointer; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translate3d(0,0,0); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease; position: relative; z-index: 1; will-change: transform, filter; }
+        .gallery-item:hover img { transform: scale(1.06) translate3d(0,0,0); filter: brightness(0.7) blur(1px); }
+        .gallery-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+        .gallery-item:hover .gallery-overlay { opacity: 1; }
+        .gallery-overlay span { font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid transparent; padding-bottom: 4px; transform: translate3d(0, 15px, 0); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.4s; }
+        .gallery-item:hover .gallery-overlay span { transform: translate3d(0,0,0); border-color: #fff; }
+
+        #map-view { background-color: #111; text-align: center; }
+        .map-container { width: 100%; max-width: 1200px; margin: 0 auto; height: 50vh; min-height: 400px; border-radius: 8px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 1; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+        #photo-map { width: 100%; height: 100%; background-color: #0b0b0b; }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #1a1a1a !important; color: #fff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important; }
+        .leaflet-container a.leaflet-popup-close-button { color: #aaa !important; font-size: 1.2rem !important; margin-top: 4px !important; }
+        .leaflet-container a.leaflet-popup-close-button:hover { color: #fff !important; }
+        .custom-popup-content { text-align: center; margin: 8px 4px; }
+        .custom-popup-content img { width: 100%; max-width: 220px; border-radius: 4px; margin-bottom: 10px; cursor: pointer; transition: transform 0.3s; }
+        .custom-popup-content img:hover { transform: scale(1.05); }
+        .custom-popup-content h4 { margin: 0 0 6px 0; font-size: 1.05rem; letter-spacing: 1px; }
+        .custom-popup-content p { margin: 0; font-size: 0.8rem; color: #aaa; }
+
+        #contact { background-color: #0f0f0f; text-align: center; }
+        .contact-info { margin-bottom: 40px; font-size: 1.1rem; color: #ccc; font-weight: 300; }
+        .social-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 40px; flex-wrap: wrap; }
+        .social-links a { font-size: 0.85rem; letter-spacing: 1px; border: 1px solid #222; padding: 12px 28px; border-radius: 2px; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform, background, color; }
+        .social-links a:hover { border-color: #fff; background: #fff; color: #000; transform: translate3d(0, -4px, 0); }
+        footer { padding: 40px; text-align: center; font-size: 0.75rem; color: #444; border-top: 1px solid rgba(255,255,255,0.02); letter-spacing: 1px; }
+
+        /* ===================================================
+           全局交互组件 (BGM, Toast, Modals)
+           =================================================== */
+        .bgm-ctrl { position: fixed; bottom: 30px; left: 30px; width: 56px; height: 56px; background: #111; border: 3px solid #222; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 9999; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s; box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.8); overflow: hidden; perspective: 1000px; transform: translate3d(0,0,0); will-change: transform; }
+        .bgm-ctrl:hover { transform: scale(1.1) translate3d(0,0,0); border-color: #444; }
+        .cd-disk { position: absolute; inset: 0; border-radius: 50%; display: flex; justify-content: center; align-items: center; will-change: transform; }
+        .cd-cover { position: absolute; inset: 0; background: var(--bgm-cover-url, var(--avatar-url)) center/cover no-repeat; border-radius: 50%; opacity: 0.65; transition: opacity 0.3s; }
+        .cd-vinyl-lines { position: absolute; inset: 3px; border: 1px solid rgba(255,255,255,0.06); border-radius: 50%; box-shadow: 0 0 0 3px rgba(0,0,0,0.15), 0 0 0 6px rgba(255,255,255,0.03), 0 0 0 9px rgba(0,0,0,0.2); pointer-events: none; z-index: 2; }
+        .bgm-ctrl::after { content: ''; position: absolute; width: 12px; height: 12px; background: #0b0b0b; border-radius: 50%; border: 2px solid #222; box-shadow: 0 0 4px rgba(0,0,0,0.8); z-index: 3; pointer-events: none; }
+        .bgm-ctrl.playing .cd-disk { animation: cdRotate 8s linear infinite; }
+        .bgm-ctrl.playing .cd-cover { opacity: 1; }
+        @keyframes cdRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .toast { position: fixed; bottom: 40px; left: 50%; transform: translate3d(-50%, 100px, 0); background: rgba(255, 255, 255, 0.95); color: #000; padding: 14px 28px; border-radius: 30px; font-size: 0.9rem; font-weight: 600; opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.3); pointer-events: none; letter-spacing: 1px; will-change: transform, opacity; }
+        .toast.show { transform: translate3d(-50%, 0, 0); opacity: 1; }
+
+        /* 网格弹窗 */
+        .modal { position: fixed; inset: 0; background-color: rgba(5, 5, 5, 0.98); z-index: 2000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.35s ease; overflow-y: auto; padding-top: 80px; transform: translate3d(0,0,0); will-change: opacity; }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .close-btn { position: fixed; top: 25px; right: 40px; font-size: 2.5rem; color: #fff; cursor: pointer; z-index: 2001; line-height: 1; transition: color 0.2s, transform 0.3s; will-change: transform; }
         .close-btn:hover { color: #a8a8a8; transform: rotate(90deg); }
         .modal-title { text-align: center; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; margin-top: 0; }
-        
         .modal-grid { column-count: 3; column-gap: 20px; padding: 0 5%; max-width: 1400px; margin: 0 auto 60px auto; }
         
-        .media-wrapper { position: relative; margin-bottom: 20px; break-inside: avoid; border-radius: 4px; overflow: hidden; background-color: #1a1a1a; box-shadow: 0 5px 15px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
-        .modal.active .media-wrapper { opacity: 1; transform: translateY(0); }
+        .media-wrapper { position: relative; margin-bottom: 20px; break-inside: avoid; border-radius: 4px; overflow: hidden; background-color: #1a1a1a; box-shadow: 0 5px 15px rgba(0,0,0,0.3); opacity: 0; transform: translate3d(0, 20px, 0); transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); cursor: zoom-in; will-change: transform, opacity; }
+        .modal.active .media-wrapper { opacity: 1; transform: translate3d(0,0,0); }
         .modal.active .media-wrapper:nth-child(1) { transition-delay: 0.05s; }
         .modal.active .media-wrapper:nth-child(2) { transition-delay: 0.1s; }
         .modal.active .media-wrapper:nth-child(3) { transition-delay: 0.15s; }
         .modal.active .media-wrapper:nth-child(4) { transition-delay: 0.2s; }
-        .modal.active .media-wrapper:nth-child(5) { transition-delay: 0.25s; }
 
-        .media-wrapper img, .media-wrapper video { width: 100%; display: block; border-radius: 4px; cursor: zoom-in; transition: transform 0.4s ease; }
-        .media-wrapper:hover img, .media-wrapper:hover video { transform: scale(1.02); }
+        .media-wrapper img, .media-wrapper video { width: 100%; display: block; border-radius: 4px; transition: transform 0.4s ease; position: relative; z-index: 1; will-change: transform; }
+        .media-wrapper:hover img, .media-wrapper:hover video { transform: scale(1.02) translate3d(0,0,0); }
         .media-wrapper video { padding-bottom: 2px; }
 
-        /* 互动按钮 */
-        .action-btn { position: absolute; top: 15px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10; }
-        .action-btn:hover { transform: scale(1.15); background: rgba(0, 0, 0, 0.9); border: 1px solid rgba(255,255,255,0.2); }
+        /* 悬浮操作栏 */
+        .action-btn { position: absolute; top: 15px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); transform: translate3d(0,0,0); will-change: transform, background; }
+        .action-btn:hover { transform: scale(1.15) translate3d(0,0,0); background: rgba(0, 0, 0, 0.9); border: 1px solid rgba(255,255,255,0.2); }
         .action-btn svg { width: 16px; height: 16px; transition: all 0.3s ease; }
-        
         .like-btn { right: 15px; }
         .like-btn svg { fill: rgba(255, 255, 255, 0.2); stroke: #fff; stroke-width: 2px; }
         .like-btn.liked svg { fill: #ff3b30; stroke: #ff3b30; }
-        .like-btn.liked { animation: heartBurst 0.4s ease; }
-        
+        .like-btn.liked { animation: heartBurst 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .comment-btn { right: 60px; }
         .comment-btn svg { fill: none; stroke: #fff; stroke-width: 2px; stroke-linejoin: round; }
-        
         .share-btn { right: 105px; } 
         .share-btn svg { fill: none; stroke: #fff; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; }
+        .info-btn { right: 150px; }
+        .info-btn svg { fill: none; stroke: #fff; stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; }
 
-        /* ===================================================
-           单图放大与评论系统 (第二级弹窗)
-           =================================================== */
-        .lightbox {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-            background-color: rgba(0, 0, 0, 0.98); z-index: 3000;
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            overflow: hidden;
-        }
+        /* Lightbox 灯箱大图 */
+        .lightbox { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.98); z-index: 3000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; overflow: hidden; transform: translate3d(0,0,0); will-change: opacity; }
         .lightbox.active { opacity: 1; pointer-events: auto; }
+        .lightbox-content-box { position: relative; max-width: 90vw; max-height: 90vh; display: flex; justify-content: center; align-items: center; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); transform: scale(0.95) translate3d(0,0,0); will-change: transform; }
+        .lightbox.active .lightbox-content-box { transform: scale(1) translate3d(0,0,0); }
+        .lightbox.comments-open .lightbox-content-box { transform: translate3d(-160px, 0, 0) scale(0.95); }
+        .lightbox.info-open .lightbox-content-box { transform: translate3d(180px, 0, 0) scale(0.95); }
+        .lightbox.info-open.comments-open .lightbox-content-box { transform: scale(0.85) translate3d(0,0,0); }
         
-        .lightbox-content-box {
-            position: relative; max-width: 90vw; max-height: 90vh;
-            display: flex; justify-content: center; align-items: center;
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            transform: scale(0.95);
-        }
-        .lightbox.active .lightbox-content-box { transform: scale(1); }
-        .lightbox.comments-open .lightbox-content-box { transform: translateX(-160px) scale(0.95); }
-
-        .lightbox-content-box img, .lightbox-content-box video {
-            max-width: 100%; max-height: 90vh; object-fit: contain;
-            border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-        }
+        .lightbox-content-box img, .lightbox-content-box video { max-width: 100%; max-height: 90vh; object-fit: contain; border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative; z-index: 1; }
         
-        .lightbox-close { position: absolute; top: 20px; right: 30px; font-size: 3rem; color: #fff; cursor: pointer; z-index: 3001; transition: color 0.3s, transform 0.3s; line-height: 1; }
+        .lightbox-close { position: absolute; top: 20px; right: 30px; font-size: 3rem; color: #fff; cursor: pointer; z-index: 3001; transition: color 0.2s, transform 0.3s; line-height: 1; will-change: transform; }
         .lightbox-close:hover { color: #a8a8a8; transform: rotate(90deg); }
-        
-        .nav-arrow {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            font-size: 2.5rem; color: rgba(255,255,255,0.4); cursor: pointer;
-            padding: 20px; user-select: none; z-index: 3001; transition: color 0.3s, transform 0.3s;
-        }
-        .nav-arrow:hover { color: #fff; transform: translateY(-50%) scale(1.15); }
+        .nav-arrow { position: absolute; top: 50%; transform: translate3d(0, -50%, 0); font-size: 2.5rem; color: rgba(255,255,255,0.4); cursor: pointer; padding: 20px; user-select: none; z-index: 3001; transition: color 0.2s, transform 0.3s; will-change: transform, color; }
+        .nav-arrow:hover { color: #fff; transform: translate3d(0, -50%, 0) scale(1.15); }
         .nav-prev { left: 20px; }
         .nav-next { right: 20px; }
-
         .lightbox-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 0.9rem; letter-spacing: 2px; color: #666; z-index: 3001; }
 
-        /* 评论侧边栏丝滑抽屉动效 */
-        .comment-sidebar {
-            position: absolute; right: -340px; top: 0; width: 340px; height: 100%;
-            background: rgba(15, 15, 15, 0.95); border-left: 1px solid rgba(255,255,255,0.05);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            display: flex; flex-direction: column; transition: right 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            z-index: 3005; box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-        }
-        .lightbox.comments-open .comment-sidebar { right: 0; }
-        
+        /* 深度信息面板 (Info Sidebar) */
+        .info-sidebar { position: absolute; left: -360px; top: 0; width: 360px; height: 100%; background: rgba(15, 15, 15, 0.95); border-right: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; flex-direction: column; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); z-index: 3005; box-shadow: 10px 0 30px rgba(0,0,0,0.5); transform: translate3d(0,0,0); will-change: transform; }
+        .lightbox.info-open .info-sidebar { transform: translate3d(360px, 0, 0); } 
+        .info-header { padding: 24px 20px; font-size: 1.1rem; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px; }
+        .close-info-btn { cursor: pointer; font-size: 1.5rem; color: #666; transition: 0.2s; }
+        .close-info-btn:hover { color: #fff; }
+        .info-content { padding: 24px 20px; color: #ccc; overflow-y: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .info-content::-webkit-scrollbar { display: none; }
+        .info-empty { text-align: center; color: #555; margin-top: 40px; font-size: 0.9rem; }
+        .info-title { font-size: 1.5rem; color: #fff; margin: 0 0 12px 0; letter-spacing: 2px; }
+        .info-meta { font-size: 0.85rem; color: #888; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
+        .info-params { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 30px; background: rgba(255,255,255,0.03); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); }
+        .param-item { display: flex; flex-direction: column; gap: 4px; }
+        .param-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .param-value { font-size: 0.9rem; color: #eee; font-family: 'Helvetica Neue', monospace; }
+        .param-item.full-width { grid-column: span 2; }
+        .info-story h4 { font-size: 1rem; color: #fff; margin: 0 0 12px 0; border-left: 3px solid #fff; padding-left: 10px; letter-spacing: 1px; }
+        .info-story p { font-size: 0.9rem; line-height: 1.8; color: #bbb; text-align: justify; margin: 0; }
+
+        /* 评论系统面板 */
+        .comment-sidebar { position: absolute; right: -340px; top: 0; width: 340px; height: 100%; background: rgba(15, 15, 15, 0.95); border-left: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; flex-direction: column; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); z-index: 3005; box-shadow: -10px 0 30px rgba(0,0,0,0.5); transform: translate3d(0,0,0); will-change: transform; }
+        .lightbox.comments-open .comment-sidebar { transform: translate3d(-340px, 0, 0); } 
         .comment-header { padding: 24px 20px; font-size: 1.1rem; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px; }
-        .close-comments-btn { cursor: pointer; font-size: 1.5rem; color: #666; transition: 0.3s; }
+        .close-comments-btn { cursor: pointer; font-size: 1.5rem; color: #666; transition: 0.2s; }
         .close-comments-btn:hover { color: #fff; }
-        
-        .comment-list { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; }
+        .comment-list { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .comment-list::-webkit-scrollbar { display: none; }
-        .comment-item { background: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(255,255,255,0.02); animation: fadeInUp 0.4s ease both; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .comment-item { background: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; border: 1px solid rgba(255,255,255,0.02); animation: fadeInUp 0.3s ease both; will-change: transform, opacity; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
         .comment-user { font-weight: bold; color: #888; margin-bottom: 4px; display: block; font-size: 0.75rem; }
         .comment-empty { text-align: center; color: #444; margin-top: 40px; font-size: 0.9rem; letter-spacing: 1px; }
-
         .comment-input-area { padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 10px; background: #0c0c0c; }
-        .comment-input-area input { flex: 1; padding: 12px 18px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); background: #141414; color: #fff; outline: none; font-size: 0.85rem; transition: border-color 0.3s; }
+        .comment-input-area input { flex: 1; padding: 12px 18px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); background: #141414; color: #fff; outline: none; font-size: 0.85rem; transition: border-color 0.25s; }
         .comment-input-area input:focus { border-color: rgba(255,255,255,0.4); }
-        .comment-input-area button { padding: 8px 20px; border-radius: 24px; border: none; background: #fff; color: #000; font-weight: bold; cursor: pointer; transition: background 0.3s, transform 0.2s; font-size: 0.85rem; }
-        .comment-input-area button:hover { background: #e0e0e0; transform: scale(1.02); }
+        .comment-input-area button { padding: 8px 20px; border-radius: 24px; border: none; background: #fff; color: #000; font-weight: bold; cursor: pointer; transition: background 0.2s, transform 0.2s; font-size: 0.85rem; will-change: transform; }
+        .comment-input-area button:hover { background: #e0e0e0; transform: scale(1.02) translate3d(0,0,0); }
 
-        @keyframes heartBurst { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
-        
-        /* 吐司弹窗高级动效 */
-        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(255, 255, 255, 0.95); color: #000; padding: 14px 28px; border-radius: 30px; font-size: 0.9rem; font-weight: 600; opacity: 0; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.3); pointer-events: none; letter-spacing: 1px; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-        #contact { padding: 120px 5%; background-color: #0f0f0f; text-align: center; }
-        .contact-info { margin-bottom: 40px; font-size: 1.1rem; color: #ccc; font-weight: 300; }
-        .social-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 40px; flex-wrap: wrap; }
-        .social-links a { font-size: 0.85rem; letter-spacing: 1px; border: 1px solid #222; padding: 12px 28px; border-radius: 2px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
-        .social-links a:hover { border-color: #fff; background: #fff; color: #000; transform: translateY(-4px); }
-        footer { padding: 40px; text-align: center; font-size: 0.75rem; color: #444; border-top: 1px solid rgba(255,255,255,0.02); letter-spacing: 1px; }
-
+        /* ===================================================
+           移动端深度适配 (极速反馈与防抖布局)
+           =================================================== */
         @media (max-width: 768px) {
+            /* 基础滚动与布局调整 */
+            section { padding: 80px 6%; }
+            .hero-title { font-size: 2.4rem; }
+            #home { background-attachment: scroll; } /* 消除 iOS 滚动视差带来的严重卡顿 */
+
+            /* 导航与菜单联动 */
+            header { padding: 15px 5%; }
             .menu-toggle { display: flex; position: absolute; right: 5%; }
-            nav ul { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: #0b0b0b; flex-direction: column; justify-content: center; align-items: center; gap: 36px; transform: translateY(-100%); opacity: 0; transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
-            nav ul.active { transform: translateY(0); opacity: 1; }
+            nav ul { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background-color: #0b0b0b; flex-direction: column; justify-content: center; align-items: center; gap: 36px; transform: translate3d(0, -100%, 0); opacity: 0; transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform, opacity; z-index: -1; }
+            nav ul.active { transform: translate3d(0, 0, 0); opacity: 1; }
             nav ul li a { font-size: 1.3rem; }
-            .hero-title { font-size: 2.2rem; }
-            #portfolio, #contact { padding: 80px 6%; }
-            .gallery-grid { grid-template-columns: 1fr; gap: 20px; }
+            
+            /* 关于我们版块 */
+            .about-wrapper { flex-direction: column; text-align: center; gap: 40px; }
+            .about-img { width: 100%; max-width: 300px; height: 350px; }
+            .about-title { font-size: 1.8rem; }
+
+            /* 作品集网格重构以适应小屏 */
+            .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
             .gallery-item { aspect-ratio: 1 / 1; }
-            .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 40%); align-items: flex-end; padding: 20px; justify-content: flex-start; }
-            .gallery-overlay span { transform: translateY(0); border-color: transparent; }
+            .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 45%); align-items: flex-end; padding: 20px; justify-content: flex-start; }
+            .gallery-overlay span { transform: translate3d(0,0,0); border-color: transparent; }
             
+            /* 弹窗与交互触控区放大 */
             .modal-grid { column-count: 1; } 
-            .close-btn { right: 20px; top: 15px; font-size: 2.8rem; }
+            .close-btn { right: 20px; top: 15px; font-size: 2.8rem; width: 44px; height: 44px; text-align: center; }
             
-            .action-btn { top: 10px; width: 34px; height: 34px; } 
-            .like-btn { right: 10px; }
-            .comment-btn { right: 52px; }
-            .share-btn { right: 94px; }
+            /* 操作按钮放大 */
+            .action-btn { top: 12px; width: 40px; height: 40px; } 
+            .like-btn { right: 12px; }
+            .comment-btn { right: 60px; }
+            .share-btn { right: 108px; }
+            .info-btn { right: 156px; } 
             
-            .nav-arrow { font-size: 2rem; padding: 10px; }
+            .nav-arrow { font-size: 2rem; padding: 10px; width: 50px; text-align: center; }
             .nav-prev { left: 0px; }
             .nav-next { right: 0px; }
-            .lightbox-close { top: 10px; right: 20px; }
+            .lightbox-close { top: 10px; right: 15px; padding: 10px; }
+            .bgm-ctrl { bottom: 20px; left: 20px; width: 48px; height: 48px; }
 
-            /* 移动端评论面板 */
-            .comment-sidebar { width: 100%; right: 0; top: auto; bottom: -100%; height: 60vh; border-top: 1px solid rgba(255,255,255,0.08); border-left: none; transition: bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
-            .lightbox.comments-open .comment-sidebar { bottom: 0; }
-            .lightbox.comments-open .lightbox-content-box { transform: translateY(-8vh) scale(0.9); }
+            /* 弹窗动画响应提速 */
+            .reveal-item { transition-duration: var(--transition-mobile) !important; }
+            .modal, .lightbox { transition-duration: 0.2s; }
+            .media-wrapper { transition-duration: 0.25s; }
+
+            /* 移动端侧栏交互改为由下至上，体验更佳 */
+            .comment-sidebar { width: 100%; right: 0; left: 0; top: auto; bottom: 0; height: 65vh; border-top: 1px solid rgba(255,255,255,0.08); border-left: none; transform: translate3d(0, 100%, 0); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+            .lightbox.comments-open .comment-sidebar { transform: translate3d(0, 0, 0); }
+            .lightbox.comments-open .lightbox-content-box { transform: translate3d(0, -10vh, 0) scale(0.85); }
+
+            .info-sidebar { width: 100%; left: 0; top: 0; bottom: auto; height: 65vh; border-bottom: 1px solid rgba(255,255,255,0.08); border-right: none; transform: translate3d(0, -100%, 0); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+            .lightbox.info-open .info-sidebar { transform: translate3d(0, 0, 0); }
+            .lightbox.info-open .lightbox-content-box { transform: translate3d(0, 10vh, 0) scale(0.85); }
         }
     </style>
-<script type="text/javascript" nonce="4cef72e78f3247b39c4f0888ad3" src="//local.adguard.org?ts=1780670707781&amp;type=content-script&amp;dmn=contribution.usercontent.google.com&amp;url=https%3A%2F%2Fcontribution.usercontent.google.com%2Fdownload%3Fc%3DCgxiYXJkX3N0b3JhZ2USTBIJdGVtcF9kYXRhGj8KMGMxNzNhOTdhMzU4MjI4YjMwMDA2NTM4MzYwNTcxNWI4MDcwMmM3MTVlYjM3ZTU4ZhILEgcQoa665YINGAE%26filename%3Dindex-v6.html%26opi%3D103135050&amp;app=msedge.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="4cef72e78f3247b39c4f0888ad3" src="//local.adguard.org?ts=1780670707781&amp;name=AdGuard%20Extra&amp;type=user-script"></script></head>
+</head>
 <body>
 
-    <!-- 背景音乐核心组件（支持本地音乐） -->
     <audio id="site-bgm" loop preload="auto">
         <source src="./bgm.mp3" type="audio/mp3">
     </audio>
     
-    <!-- 精美CD黑胶唱片旋转控件 -->
     <div class="bgm-ctrl" id="bgm-btn" title="背景音乐播放/暂停">
         <div class="cd-disk">
             <div class="cd-cover"></div>
@@ -306,16 +310,19 @@
         </div>
     </div>
 
-    <header>
+    <header id="site-header">
         <div class="logo"></div>
         <div class="menu-toggle" id="mobile-menu">
-            <span class="bar"></span><span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
         </div>
         <nav>
             <ul id="nav-list">
                 <li><a href="#" class="nav-link">首页</a></li>
+                <li><a href="#about" class="nav-link">关于</a></li> 
                 <li><a href="#portfolio" class="nav-link">作品集</a></li>
-                <li><a href="#contact" class="nav-link">联系方式</a></li>
+                <li><a href="#map-view" class="nav-link">足迹</a></li>
+                <li><a href="#contact" class="nav-link">联系</a></li>
             </ul>
         </nav>
     </header>
@@ -329,6 +336,18 @@
         <a href="#portfolio" class="btn">作品查看</a>
     </section>
 
+    <section id="about">
+        <div class="about-wrapper">
+            <div class="about-img reveal-item"></div>
+            <div class="about-content">
+                <h2 class="about-title reveal-item delay-1">LinDan Wu</h2>
+                <p class="about-subtitle reveal-item delay-2">独立摄影师 / 视觉艺术家</p>
+                <p class="about-desc reveal-item delay-3">你好，我是吴林丹。我致力于人像摄影、电影感视频记录与实验性视觉表达。擅长用镜头捕捉时间的呼吸，用大光圈锁定流动的风采，用小快门定格经典的瞬间。</p>
+                <p class="about-desc reveal-item delay-4">我相信每一张照片都是一次跨越时空的对话，记录着光影交织下的真实情感。期待与你一起，用镜头书写更多的故事。</p>
+            </div>
+        </div>
+    </section>
+
     <section id="portfolio">
         <h2 class="section-title reveal-item">作品集</h2>
         <div class="gallery-grid">
@@ -338,7 +357,7 @@
             </div>
             <div class="gallery-item reveal-item delay-2" data-module="module2">
                 <img src="./J39X2xX_8CQ.jfif" alt="封面2">
-                <div class="gallery-overlay"><span>影视剪辑</span></div>
+                <div class="gallery-overlay"><span>电影视频</span></div>
             </div>
             <div class="gallery-item reveal-item delay-3" data-module="module3">
                 <img src="./photo-1517960413843-0aee8e2b3285.avif" alt="封面3">
@@ -348,6 +367,13 @@
                 <img src="./headphones_audio_black_134032_3840x2160.jpg" alt="封面4">
                 <div class="gallery-overlay"><span>自然风光</span></div>
             </div>
+        </div>
+    </section>
+
+    <section id="map-view">
+        <h2 class="section-title reveal-item">光影足迹</h2>
+        <div class="map-container reveal-item delay-1">
+            <div id="photo-map"></div>
         </div>
     </section>
 
@@ -363,34 +389,35 @@
 
     <footer>&copy; 2026 Visual Studio. All rights reserved.</footer>
 
-    <!-- 第一级弹窗：网格瀑布流 -->
     <div id="gallery-modal" class="modal">
         <span class="close-btn" id="close-modal">&times;</span>
         <h3 class="modal-title" id="modal-title">Category Title</h3>
         <div class="modal-grid" id="modal-grid"></div>
     </div>
 
-    <!-- 第二级弹窗：独立放大查看器 (Lightbox) -->
     <div id="lightbox" class="lightbox">
         <span class="lightbox-close" id="close-lightbox">&times;</span>
         <div class="nav-arrow nav-prev" id="lightbox-prev">&#10094;</div>
         
-        <div class="lightbox-content-box" id="lightbox-content-box">
-            <!-- JS 动态注入 -->
-        </div>
+        <div class="lightbox-content-box" id="lightbox-content-box"></div>
         
         <div class="nav-arrow nav-next" id="lightbox-next">&#10095;</div>
         <div class="lightbox-counter" id="lightbox-counter">1 / 1</div>
 
-        <!-- 评论侧边栏 -->
+        <div class="info-sidebar" id="info-sidebar">
+            <div class="info-header">
+                作品档案
+                <span class="close-info-btn" id="close-info-btn">&times;</span>
+            </div>
+            <div class="info-content" id="info-content"></div>
+        </div>
+
         <div class="comment-sidebar" id="comment-sidebar">
             <div class="comment-header">
                 全部评论
                 <span class="close-comments-btn" id="close-comments-btn">&times;</span>
             </div>
-            <div class="comment-list" id="comment-list">
-                <!-- 评论内容 -->
-            </div>
+            <div class="comment-list" id="comment-list"></div>
             <div class="comment-input-area">
                 <input type="text" id="comment-input" placeholder="写下你的想法...">
                 <button id="send-comment-btn">发送</button>
@@ -398,31 +425,46 @@
         </div>
     </div>
 
-    <!-- 消息提示 -->
     <div id="toast" class="toast">操作成功</div>
 
     <script>
-        // ==========================================
-        // 核心功能一：防下载系统
-        // ==========================================
+        // 防右键菜单提取
         document.addEventListener('contextmenu', function(e) {
-            if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO') {
+            if (e.target.tagName === 'IMG' || e.target.tagName === 'VIDEO' || e.target.classList.contains('gallery-item') || e.target.classList.contains('media-wrapper')) {
                 e.preventDefault();
                 showToast("版权所有，禁止下载 🔒");
             }
         });
 
-        // ==========================================
-        // 核心功能二：视差滚动与高级滚动入场
-        // ==========================================
+        // 视差滚动优化与导航栏动态效果
+        let ticking = false;
+        const header = document.getElementById('site-header');
         window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const home = document.getElementById('home');
-            if (home) {
-                home.style.backgroundPositionY = `${scrolled * 0.35}px`;
-            }
-        });
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrolled = window.pageYOffset;
+                    
+                    // 仅在非移动端启用视差滚动，避免 iOS Safari 掉帧
+                    if (window.innerWidth > 768) {
+                        const home = document.getElementById('home');
+                        if (home) home.style.backgroundPositionY = `${scrolled * 0.35}px`;
+                    }
 
+                    // 导航栏滚动紧凑模式
+                    if (scrolled > 50) {
+                        header.style.padding = '10px 5%';
+                        header.style.background = 'rgba(11, 11, 11, 0.95)';
+                    } else {
+                        header.style.padding = '20px 5%';
+                        header.style.background = 'rgba(11, 11, 11, 0.8)';
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+
+        // 硬件加速动效监听器
         const revealCallback = (entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -434,9 +476,7 @@
         const revealObserver = new IntersectionObserver(revealCallback, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
         document.querySelectorAll('.reveal-item').forEach(item => revealObserver.observe(item));
 
-        // ==========================================
-        // 核心功能三：背景音乐系统（手机端/微信端极致兼容优化版）
-        // ==========================================
+        // 背景音乐系统
         const bgm = document.getElementById('site-bgm');
         const bgmBtn = document.getElementById('bgm-btn');
         let musicStarted = false;
@@ -447,9 +487,7 @@
                 bgm.play().then(() => {
                     bgmBtn.classList.add('playing');
                     bgmAutoPausedByVideo = false;
-                }).catch(err => {
-                    console.log("播放失败，请检查本地音乐文件 bgm.mp3 是否存在。");
-                });
+                }).catch(() => console.log("播放失败，请检查本地音乐文件"));
             } else {
                 bgm.pause();
                 bgmBtn.classList.remove('playing');
@@ -457,8 +495,8 @@
             }
         }
         
-        bgmBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleBGM(); });
-        bgmBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); toggleBGM(); });
+        bgmBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleBGM(); }, { passive: false });
+        bgmBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); toggleBGM(); }, { passive: false });
 
         function startMusicOnInteraction() {
             if (!musicStarted) {
@@ -477,9 +515,8 @@
         }
 
         document.addEventListener('click', startMusicOnInteraction);
-        document.addEventListener('touchstart', startMusicOnInteraction);
+        document.addEventListener('touchstart', startMusicOnInteraction, { passive: true });
         document.addEventListener('scroll', startMusicOnInteraction, { passive: true });
-
         document.addEventListener("WeixinJSBridgeReady", function () {
             if (!musicStarted) {
                 bgm.play().then(() => {
@@ -490,62 +527,88 @@
             }
         }, false);
 
-
-        /* =========================================================================
-           【图库基础与交互数据交互区】
-           ========================================================================= */
+        // 数据区
         const portfolioData = {
-            "module1": {
-                title: "人像艺术",
+            "module1": { 
+                title: "人像艺术", 
                 items: [
-                    { type: "image", src: "./DENG3883.jpg" },
-                    { type: "image", src: "./DENG3874.jpg" },
-                    { type: "image", src: "./DENG3993.jpg" },
+                    { 
+                        type: "image", 
+                        src: "./DENG3883.jpg",
+                        info: {
+                            title: "期待",
+                            date: "2025年6月27日",
+                            location: "长沙市，岳麓区",
+                            coords: [28.2386, 112.9803],
+                            camera: "canon R6",
+                            lens: " 85mm F1.4 ",
+                            aperture: "f/1.4",
+                            shutter: "1/200s",
+                            iso: "100",
+                            story: "利用大光圈带来的极致虚化，将复杂的城市背景剥离。拍摄时突然的一阵微风吹动了发丝，快门捕捉到了人物眼中极其微妙的情绪流露。这也是我尝试结合电影感色彩预设的一次实验。"
+                        }
+                    }, 
+                    { 
+                        type: "image", 
+                        src: "./DENG3874.jpg",
+                        info: {
+                            title: "回眸",
+                            date: "2025年6月27日",
+                            location: "长沙市，岳麓区",
+                            coords: [28.2386, 112.9803],
+                            camera: "canon R6",
+                            lens: " 85mm F1.4 ",
+                            aperture: "f/1.4",
+                            shutter: "1/200s",
+                            iso: "100",
+                            story: "捕捉夕阳下的那一抹温柔。"
+                        }
+                    }, 
+                    { type: "image", src: "./DENG3993.jpg" }, 
                     { type: "image", src: "./DENG3852.jpg" }
-                ]
+                ] 
             },
-            "module2": {
-                title: "影视剪辑",
+            "module2": { title: "电影视频", items: [{ type: "video", src: "https://www.w3schools.com/html/mov_bbb.mp4" }, { type: "image", src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }, { type: "video", src: "./12.mp4" }] },
+            "module3": { title: "城市烟火", items: [{ type: "image", src: "./photo-1780254865273-908136e98d5a.avif" }, { type: "image", src: "./photo-1780139883668-325a9b3b328d.avif" }, { type: "image", src: "./black-and-white-photography-animal-pet-portrait-cat-512255-pxhere.com.jpg" }, { type: "image", src: "./photo-1780516053602-7fc79c63ee6c.avif" }] },
+            "module4": { 
+                title: "自然风光", 
                 items: [
-                    { type: "image", src: "./11.jfif" },
-                    { type: "image", src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" },
-                    { type: "video", src: "./12.mp4" }
-                ]
-            },
-            "module3": {
-                title: "城市烟火",
-                items: [
-                    { type: "image", src: "./photo-1780254865273-908136e98d5a.avif" },
-                    { type: "image", src: "./photo-1780139883668-325a9b3b328d.avif" },
-                    { type: "image", src: "./black-and-white-photography-animal-pet-portrait-cat-512255-pxhere.com.jpg" },
-                    { type: "image", src: "./photo-1780516053602-7fc79c63ee6c.avif" }
-                ]
-            },
-            "module4": {
-                title: "自然风光",
-                items: [
-                    { type: "image", src: "./photo-1776965767257-6b07d891a0a3.avif" },
-                    { type: "image", src: "./photo-1779113940974-97e682627830.avif" },
-                    { type: "image", src: "./tree-nature-branch-blossom-winter-plant-615744-pxhere.com.jpg" },
+                    { 
+                        type: "image", 
+                        src: "./photo-1776965767257-6b07d891a0a3.avif",
+                        info: {
+                            title: "暮光之城",
+                            location: "上海市，静安区",
+                            coords: [31.2288, 121.4444],
+                        }
+                    }, 
+                    { type: "image", src: "./photo-1779113940974-97e682627830.avif" }, 
+                    { type: "image", src: "./tree-nature-branch-blossom-winter-plant-615744-pxhere.com.jpg" }, 
                     { type: "image", src: "./photo-1778434505732-baa2e78041a6.avif" }
-                ]
+                ] 
             }
         };
 
+        // DOM 元素与外部链接绑定
         const rootStyles = getComputedStyle(document.documentElement);
         document.getElementById('link-ins').href = rootStyles.getPropertyValue('--douyin-link').replace(/"/g, '').trim();
         document.getElementById('link-yt').href = rootStyles.getPropertyValue('--youtube-link').replace(/"/g, '').trim();
         document.getElementById('link-vimeo').href = rootStyles.getPropertyValue('--xiaohongshu-link').replace(/"/g, '').trim();
 
+        // 移动端菜单联动控制
         const menuToggle = document.querySelector('#mobile-menu');
         const navList = document.querySelector('#nav-list');
         const navLinks = document.querySelectorAll('.nav-link');
-        menuToggle.addEventListener('click', () => navList.classList.toggle('active'));
-        navLinks.forEach(link => link.addEventListener('click', () => navList.classList.remove('active')));
+        
+        menuToggle.addEventListener('click', () => {
+            navList.classList.toggle('active');
+            menuToggle.classList.toggle('active');
+        });
+        navLinks.forEach(link => link.addEventListener('click', () => {
+            navList.classList.remove('active');
+            menuToggle.classList.remove('active');
+        }));
 
-        /* =========================================================================
-           系统交互核心逻辑 (第一级网格、点赞、分享、评论、Lightbox)
-           ========================================================================= */
         const modules = document.querySelectorAll('.gallery-item');
         const modal = document.getElementById('gallery-modal');
         const closeModalBtn = document.getElementById('close-modal');
@@ -559,28 +622,29 @@
         const lightboxPrev = document.getElementById('lightbox-prev');
         const lightboxNext = document.getElementById('lightbox-next');
         const lightboxCounter = document.getElementById('lightbox-counter');
+        const closeInfoBtn = document.getElementById('close-info-btn');
+        const closeCommentsBtn = document.getElementById('close-comments-btn');
         
         let currentLightboxData = []; 
         let currentLightboxIndex = 0; 
-
+        let likedMedia = JSON.parse(localStorage.getItem('likedMedia')) || {};
         let commentsDatabase = JSON.parse(localStorage.getItem('photoComments')) || {};
+        
         const commentListDOM = document.getElementById('comment-list');
         const commentInput = document.getElementById('comment-input');
         const sendCommentBtn = document.getElementById('send-comment-btn');
-        const closeCommentsBtn = document.getElementById('close-comments-btn');
 
         const heartSvg = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
         const shareSvg = `<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`;
         const commentSvg = `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+        const infoSvg = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
 
-        let likedMedia = JSON.parse(localStorage.getItem('likedMedia')) || {};
         let toastTimeout;
-
         function showToast(msg) {
             toast.textContent = msg;
             toast.classList.add('show');
             clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2500);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2000);
         }
 
         modules.forEach(item => {
@@ -591,6 +655,7 @@
                 if(data) {
                     modalTitle.textContent = data.title;
                     modalGrid.innerHTML = ''; 
+                    const fragment = document.createDocumentFragment();
                     
                     data.items.forEach((mediaItem, index) => {
                         const wrapper = document.createElement('div');
@@ -608,38 +673,42 @@
                             domElement = document.createElement('img');
                             domElement.src = mediaItem.src;
                             domElement.loading = "lazy";
+                            domElement.decoding = "async";
                         }
 
-                        domElement.addEventListener('click', (e) => {
+                        wrapper.addEventListener('click', (e) => {
+                            if (e.target.closest('.action-btn')) return; 
                             e.stopPropagation();
-                            openLightbox(data.items, index, false);
+                            openLightbox(data.items, index, false, false);
+                        });
+
+                        const infoBtn = document.createElement('div');
+                        infoBtn.className = 'action-btn info-btn';
+                        infoBtn.innerHTML = infoSvg;
+                        infoBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openLightbox(data.items, index, false, true);
                         });
 
                         const shareBtn = document.createElement('div');
                         shareBtn.className = 'action-btn share-btn';
                         shareBtn.innerHTML = shareSvg;
-                        shareBtn.title = "转发分享";
                         shareBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
                             const absoluteUrl = new URL(mediaItem.src, window.location.href).href;
                             if (navigator.share) {
-                                navigator.share({ 
-                                    title: 'Visual Studio 作品分享', 
-                                    text: '快来看看这个精彩的作品！',
-                                    url: absoluteUrl 
-                                }).catch(() => {});
+                                navigator.share({ title: 'Visual Studio', url: absoluteUrl }).catch(() => {});
                             } else {
-                                navigator.clipboard.writeText(absoluteUrl).then(() => showToast("专属转发链接已复制 ✨")).catch(() => showToast("复制失败"));
+                                navigator.clipboard.writeText(absoluteUrl).then(() => showToast("已复制链接 ✨")).catch(() => {});
                             }
                         });
 
                         const commentBtn = document.createElement('div');
                         commentBtn.className = 'action-btn comment-btn';
                         commentBtn.innerHTML = commentSvg;
-                        commentBtn.title = "查看/添加评论";
                         commentBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            openLightbox(data.items, index, true);
+                            openLightbox(data.items, index, true, false);
                         });
 
                         const likeBtn = document.createElement('div');
@@ -660,12 +729,14 @@
                         });
 
                         wrapper.appendChild(domElement);
+                        wrapper.appendChild(infoBtn);
                         wrapper.appendChild(shareBtn);
                         wrapper.appendChild(commentBtn);
                         wrapper.appendChild(likeBtn);
-                        modalGrid.appendChild(wrapper);
+                        fragment.appendChild(wrapper);
                     });
 
+                    modalGrid.appendChild(fragment);
                     modal.classList.add('active');
                     document.body.classList.add('modal-open'); 
                 }
@@ -675,31 +746,23 @@
         function closeModal() {
             modal.classList.remove('active');
             document.body.classList.remove('modal-open');
-            setTimeout(() => { modalGrid.innerHTML = ''; }, 400); 
+            setTimeout(() => { modalGrid.innerHTML = ''; }, 300);
         }
         closeModalBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
 
-        // ==========================================
-        // Lightbox 与智能手机端视频通道音轨联动逻辑
-        // ==========================================
-        function openLightbox(items, index, openComments = false) {
+        function openLightbox(items, index, openComments = false, openInfo = false) {
             currentLightboxData = items;
             currentLightboxIndex = index;
             updateLightboxContent();
             lightbox.classList.add('active');
             
-            if(openComments) {
-                lightbox.classList.add('comments-open');
-            } else {
-                lightbox.classList.remove('comments-open');
-            }
+            if(openComments) { lightbox.classList.add('comments-open'); } else { lightbox.classList.remove('comments-open'); }
+            if(openInfo) { lightbox.classList.add('info-open'); } else { lightbox.classList.remove('info-open'); }
         }
 
         function updateLightboxContent() {
-            // 切换前，如果原先有正在运行的手机端视频，必须立即在系统级别强制中断卸载
             cleanupActiveVideo();
-
             lightboxContentBox.innerHTML = '';
             const currentItem = currentLightboxData[currentLightboxIndex];
             lightboxCounter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxData.length}`;
@@ -710,11 +773,10 @@
                 video.controls = true; 
                 video.autoplay = true; 
                 video.playsInline = true;
-                video.webkitPlaysInline = true; // 强制苹果iOS内置浏览器原位播放，不跳出全屏系统播放器
+                video.webkitPlaysInline = true; 
                 video.controlsList = "nodownload";
                 lightboxContentBox.appendChild(video);
 
-                // 【手机端硬核互斥】：只要当前准备渲染或播放手机视频，立即无条件切断背景音乐
                 if (!bgm.paused) {
                     bgm.pause();
                     bgmBtn.classList.remove('playing');
@@ -723,96 +785,106 @@
             } else {
                 const img = document.createElement('img');
                 img.src = currentItem.src;
+                img.decoding = "async";
                 lightboxContentBox.appendChild(img);
 
-                // 切换到普通大图时，如果是被视频自动挂起的背景音乐，顺畅唤醒
                 if (bgmAutoPausedByVideo) {
-                    bgm.play().then(() => {
-                        bgmBtn.classList.add('playing');
-                    }).catch(() => {});
+                    bgm.play().then(() => { bgmBtn.classList.add('playing'); }).catch(() => {});
                     bgmAutoPausedByVideo = false; 
                 }
             }
-
             renderComments(currentItem.src);
+            renderInfo(currentItem.info);
         }
 
-        // 精准清理视频进程，释放手机解码通道
         function cleanupActiveVideo() {
             const activeVideo = lightboxContentBox.querySelector('video');
             if (activeVideo) {
                 activeVideo.pause();
-                activeVideo.src = ""; // 切断视频网络流，防止手机后台隐蔽驻留音频流
-                activeVideo.load();   // 强制手机硬件层重置视频组件
+                activeVideo.src = ""; 
+                activeVideo.load();   
             }
+        }
+
+        function renderInfo(infoData) {
+            const infoContentDOM = document.getElementById('info-content');
+            if (!infoData) {
+                infoContentDOM.innerHTML = '<div class="info-empty">暂未收录该作品的深度参数与创作手记。</div>';
+                return;
+            }
+            infoContentDOM.innerHTML = `
+                <h3 class="info-title">${infoData.title || '无题'}</h3>
+                <div class="info-meta">
+                    <span>📍 ${infoData.location || '坐标未记录'}</span>
+                    <span>🗓️ ${infoData.date || '时间未记录'}</span>
+                </div>
+                <div class="info-params">
+                    <div class="param-item full-width"><span class="param-label">Camera</span><span class="param-value">${infoData.camera || '-'}</span></div>
+                    <div class="param-item full-width"><span class="param-label">Lens</span><span class="param-value">${infoData.lens || '-'}</span></div>
+                    <div class="param-item"><span class="param-label">Aperture</span><span class="param-value">${infoData.aperture || '-'}</span></div>
+                    <div class="param-item"><span class="param-label">Shutter</span><span class="param-value">${infoData.shutter || '-'}</span></div>
+                    <div class="param-item"><span class="param-label">ISO</span><span class="param-value">${infoData.iso || '-'}</span></div>
+                </div>
+                <div class="info-story">
+                    <h4>创作手记</h4>
+                    <p>${infoData.story || '创作者沉浸在光影的流转中，暂未留下文字记录。'}</p>
+                </div>
+            `;
         }
 
         function renderComments(mediaSrc) {
             commentListDOM.innerHTML = '';
             const comments = commentsDatabase[mediaSrc] || [];
-            
             if(comments.length === 0) {
                 commentListDOM.innerHTML = '<div class="comment-empty">暂无评论，来抢沙发吧！</div>';
                 return;
             }
-
+            const fragment = document.createDocumentFragment();
             comments.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'comment-item';
                 div.innerHTML = `<span class="comment-user">匿名访客</span>${c}`;
-                commentListDOM.appendChild(div);
+                fragment.appendChild(div);
             });
-            
-            setTimeout(() => { commentListDOM.scrollTop = commentListDOM.scrollHeight; }, 50);
+            commentListDOM.appendChild(fragment);
+            requestAnimationFrame(() => {
+                commentListDOM.scrollTop = commentListDOM.scrollHeight;
+            });
         }
 
         function submitComment() {
             const text = commentInput.value.trim();
             if(!text) return showToast("评论内容不能为空");
-
             const currentSrc = currentLightboxData[currentLightboxIndex].src;
             if(!commentsDatabase[currentSrc]) commentsDatabase[currentSrc] = [];
-            
             commentsDatabase[currentSrc].push(text);
             localStorage.setItem('photoComments', JSON.stringify(commentsDatabase));
-            
             commentInput.value = '';
             renderComments(currentSrc);
-            showToast("评论发布成功！");
+            showToast("发布成功！");
         }
 
         sendCommentBtn.addEventListener('click', submitComment);
         commentInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') submitComment(); });
+        
+        closeInfoBtn.addEventListener('click', () => lightbox.classList.remove('info-open'));
         closeCommentsBtn.addEventListener('click', () => lightbox.classList.remove('comments-open'));
 
         function closeLightbox() {
-            // 【手机端硬核联动】：用户关闭视频时，优先执行系统级硬件流断开操作
             cleanupActiveVideo();
-
             lightbox.classList.remove('active');
             lightbox.classList.remove('comments-open');
-            setTimeout(() => { lightboxContentBox.innerHTML = ''; }, 300);
+            lightbox.classList.remove('info-open');
+            setTimeout(() => { lightboxContentBox.innerHTML = ''; }, 250);
             
-            // 确认手机端视频完全销毁关闭后，背景音乐恢复原位连续播放
             if (bgmAutoPausedByVideo) {
-                bgm.play().then(() => {
-                    bgmBtn.classList.add('playing');
-                }).catch(() => {});
+                bgm.play().then(() => { bgmBtn.classList.add('playing'); }).catch(() => {});
                 bgmAutoPausedByVideo = false; 
             }
         }
 
-        lightboxPrev.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxData.length) % currentLightboxData.length;
-            updateLightboxContent();
-        });
-
-        lightboxNext.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxData.length;
-            updateLightboxContent();
-        });
+        lightboxPrev.addEventListener('click', (e) => { e.stopPropagation(); currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxData.length) % currentLightboxData.length; updateLightboxContent(); });
+        lightboxNext.addEventListener('click', (e) => { e.stopPropagation(); currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxData.length; updateLightboxContent(); });
 
         closeLightboxBtn.addEventListener('click', closeLightbox);
         lightbox.addEventListener('click', (e) => {
@@ -826,6 +898,41 @@
             if (e.key === 'Escape') closeLightbox();
             if (e.key === 'ArrowLeft') lightboxPrev.click();
             if (e.key === 'ArrowRight') lightboxNext.click();
+        });
+
+        // ===================================================
+        // 地图初始化与渲染
+        // ===================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const map = L.map('photo-map', { scrollWheelZoom: false }).setView([35.86166, 104.195397], 4);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            const markers = [];
+            Object.values(portfolioData).forEach(module => {
+                module.items.forEach(item => {
+                    if (item.info && item.info.coords && item.type === 'image') {
+                        const marker = L.marker(item.info.coords).addTo(map);
+                        markers.push(marker);
+                        const popupHtml = `
+                            <div class="custom-popup-content">
+                                <img src="${item.src}" alt="${item.info.title || '摄影作品'}">
+                                <h4>${item.info.title || '无题'}</h4>
+                                <p>📍 ${item.info.location || '未知地点'}</p>
+                            </div>
+                        `;
+                        marker.bindPopup(popupHtml, { maxWidth: 260, minWidth: 200 });
+                    }
+                });
+            });
+
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                setTimeout(() => { map.fitBounds(group.getBounds(), { padding: [50, 50] }); }, 500);
+            }
         });
 
     </script>
