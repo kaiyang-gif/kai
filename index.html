@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
     <style>
         /* ===================================================
            【基础配置】
@@ -23,7 +25,7 @@
             --xiaohongshu-link: "https://www.xiaohongshu.com/user/profile/62b99f62000000001902abfd";
             
             --transition-pc: 1s cubic-bezier(0.215, 0.610, 0.355, 1);
-            --transition-mobile: 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            --transition-mobile: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* ===================================================
@@ -38,13 +40,11 @@
 
         /* 防下载核心 CSS */
         img, video { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
-        /* 透明防下载遮罩层 */
         .gallery-item::after, .media-wrapper::after, .lightbox-content-box::after { content: ''; position: absolute; inset: 0; z-index: 2; }
         .gallery-overlay { z-index: 3; }
         .action-btn { z-index: 10; }
         .media-wrapper video, .lightbox-content-box video { position: relative; z-index: 10; } 
 
-        /* 场景全局动效入场基类 (强制 3D 硬件加速) */
         .reveal-item { opacity: 0; transform: translate3d(0, 40px, 0); will-change: transform, opacity; transition: opacity var(--transition-pc), transform var(--transition-pc); }
         .reveal-item.revealed { opacity: 1; transform: translate3d(0, 0, 0); }
         .delay-1 { transition-delay: 0.1s; }
@@ -55,7 +55,9 @@
         /* ===================================================
            导航与首屏
            =================================================== */
-        header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; background: rgba(11, 11, 11, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.03); transform: translate3d(0,0,0); transition: padding 0.3s ease; }
+        header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; background: rgba(11, 11, 11, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.03); transform: translate3d(0,0,0); transition: padding 0.3s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, box-shadow 0.3s ease; }
+        header.scrolled { padding: 10px 5%; background: rgba(11, 11, 11, 0.95); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        
         .logo { font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; z-index: 1001; }
         .logo::before { content: var(--site-logo); }
         nav ul { list-style: none; display: flex; gap: 30px; margin: 0; padding: 0; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
@@ -63,13 +65,15 @@
         nav ul li a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: #fff; transition: width 0.3s ease; }
         nav ul li a:hover::after { width: 100%; }
 
-        /* 汉堡菜单按钮动效 */
         .menu-toggle { display: none; flex-direction: column; cursor: pointer; gap: 5px; z-index: 1001; width: 26px; height: 20px; justify-content: center; }
         .menu-toggle .bar { width: 100%; height: 1.5px; background-color: #fff; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; transform-origin: center; }
         .menu-toggle.active .bar:nth-child(1) { transform: translateY(3.25px) rotate(45deg); }
         .menu-toggle.active .bar:nth-child(2) { transform: translateY(-3.25px) rotate(-45deg); }
 
-        #home { height: 100vh; height: 100dvh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 24px; background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), var(--home-bg-url) center/cover no-repeat; background-attachment: fixed; will-change: background-position; }
+        #home { height: 100vh; height: 100dvh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 24px; background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), var(--home-bg-url) center/cover no-repeat; background-attachment: fixed; }
+        
+        .home-content { display: flex; flex-direction: column; align-items: center; text-align: center; will-change: transform, opacity; }
+        
         .avatar { width: 110px; height: 110px; border-radius: 50%; background: var(--avatar-url) center/cover no-repeat; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.2); transform: scale(0.9) translate3d(0,0,0); opacity: 0; animation: scaleIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; will-change: transform, opacity; }
         
         .hero-title-wrap { overflow: hidden; margin-bottom: 12px; }
@@ -86,12 +90,12 @@
         @keyframes fadeInBlur { to { opacity: 1; transform: translate3d(0,0,0); filter: blur(0); } }
 
         /* ===================================================
-           内容版块 (关于、作品集、足迹、联系)
+           内容版块 (关于、作品集、3D展示、足迹、联系)
            =================================================== */
         section { padding: 120px 5%; }
         #about { background-color: #111; display: flex; justify-content: center; align-items: center; }
         .about-wrapper { max-width: 1100px; display: flex; gap: 60px; align-items: center; width: 100%; }
-        .about-img { width: 320px; height: 420px; border-radius: 4px; background: var(--avatar-url) center/cover no-repeat; box-shadow: 0 15px 35px rgba(0,0,0,0.4); flex-shrink: 0; position: relative; }
+        .about-img { width: 320px; height: 420px; border-radius: 4px; background: var(--avatar-url) center/cover no-repeat; box-shadow: 0 15px 35px rgba(0,0,0,0.4); flex-shrink: 0; position: relative; transform: translate3d(0,0,0); }
         .about-img::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); border-radius: 4px; }
         .about-content { flex: 1; }
         .about-title { font-size: 2rem; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; font-weight: 600; display: inline-block; border-bottom: 1px solid #fff; padding-bottom: 10px; }
@@ -106,14 +110,40 @@
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
         .gallery-item { position: relative; overflow: hidden; aspect-ratio: 16 / 10; background-color: #161616; cursor: pointer; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translate3d(0,0,0); }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease; position: relative; z-index: 1; will-change: transform, filter; }
-        .gallery-item:hover img { transform: scale(1.06) translate3d(0,0,0); filter: brightness(0.7) blur(1px); }
-        .gallery-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+        .gallery-item:hover img { transform: scale(1.06) translate3d(0,0,0); filter: brightness(0.7); } 
+        .gallery-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; transform: translate3d(0,0,0); }
         .gallery-item:hover .gallery-overlay { opacity: 1; }
         .gallery-overlay span { font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid transparent; padding-bottom: 4px; transform: translate3d(0, 15px, 0); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.4s; }
         .gallery-item:hover .gallery-overlay span { transform: translate3d(0,0,0); border-color: #fff; }
 
-        #map-view { background-color: #111; text-align: center; }
-        .map-container { width: 100%; max-width: 1200px; margin: 0 auto; height: 50vh; min-height: 400px; border-radius: 8px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 1; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+        /* ===================================================
+           3D 模型展示模块拓展样式与移动端核心修复
+           =================================================== */
+        #model-gallery { background-color: #111; text-align: center; }
+        .model-container { width: 100%; max-width: 1200px; margin: 0 auto; height: 60vh; min-height: 450px; border-radius: 8px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 1; position: relative; border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%); display: flex; justify-content: center; align-items: center; transform: translate3d(0,0,0); }
+        
+        model-viewer { 
+            width: 100%; 
+            height: 100%; 
+            --poster-color: transparent; 
+            outline: none; 
+            touch-action: none; 
+        }
+
+        .model-nav-arrow { position: absolute; top: 50%; transform: translate3d(0, -50%, 0); font-size: 2.5rem; color: rgba(255,255,255,0.4); cursor: pointer; padding: 20px; user-select: none; z-index: 10; transition: color 0.2s, transform 0.15s; will-change: transform, color; }
+        .model-nav-arrow:hover { color: #fff; transform: translate3d(0, -50%, 0) scale(1.15); }
+        .model-nav-arrow:active { transform: translate3d(0, -50%, 0) scale(0.95); }
+        .model-prev { left: 15px; }
+        .model-next { right: 15px; }
+        
+        .model-info-panel { position: absolute; bottom: 30px; left: 50%; transform: translate3d(-50%, 0, 0); background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 12px 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); text-align: center; z-index: 10; pointer-events: none; transition: opacity 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.3); will-change: transform; }
+        .model-info-title { margin: 0 0 6px 0; font-size: 1.1rem; color: #fff; letter-spacing: 1.5px; font-weight: 600; text-transform: uppercase; }
+        .model-info-desc { margin: 0; font-size: 0.85rem; color: #aaa; }
+        
+        .model-counter { position: absolute; top: 20px; right: 20px; font-size: 0.85rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); padding: 6px 12px; border-radius: 20px; z-index: 10; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.1); transform: translate3d(0,0,0); }
+
+        #map-view { background-color: #0b0b0b; text-align: center; }
+        .map-container { width: 100%; max-width: 1200px; margin: 0 auto; height: 50vh; min-height: 400px; border-radius: 8px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 1; position: relative; border: 1px solid rgba(255,255,255,0.05); transform: translate3d(0,0,0); }
         #photo-map { width: 100%; height: 100%; background-color: #0b0b0b; }
         .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #1a1a1a !important; color: #fff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important; }
         .leaflet-container a.leaflet-popup-close-button { color: #aaa !important; font-size: 1.2rem !important; margin-top: 4px !important; }
@@ -150,8 +180,9 @@
         /* 网格弹窗 */
         .modal { position: fixed; inset: 0; background-color: rgba(5, 5, 5, 0.98); z-index: 2000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.35s ease; overflow-y: auto; padding-top: 80px; transform: translate3d(0,0,0); will-change: opacity; }
         .modal.active { opacity: 1; pointer-events: auto; }
-        .close-btn { position: fixed; top: 25px; right: 40px; font-size: 2.5rem; color: #fff; cursor: pointer; z-index: 2001; line-height: 1; transition: color 0.2s, transform 0.3s; will-change: transform; }
+        .close-btn { position: fixed; top: 25px; right: 40px; font-size: 2.5rem; color: #fff; cursor: pointer; z-index: 2001; line-height: 1; transition: color 0.2s, transform 0.15s; will-change: transform; }
         .close-btn:hover { color: #a8a8a8; transform: rotate(90deg); }
+        .close-btn:active { transform: scale(0.9) rotate(90deg); }
         .modal-title { text-align: center; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; margin-top: 0; }
         .modal-grid { column-count: 3; column-gap: 20px; padding: 0 5%; max-width: 1400px; margin: 0 auto 60px auto; }
         
@@ -169,6 +200,7 @@
         /* 悬浮操作栏 */
         .action-btn { position: absolute; top: 15px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); transform: translate3d(0,0,0); will-change: transform, background; }
         .action-btn:hover { transform: scale(1.15) translate3d(0,0,0); background: rgba(0, 0, 0, 0.9); border: 1px solid rgba(255,255,255,0.2); }
+        .action-btn:active { transform: scale(0.95) translate3d(0,0,0); }
         .action-btn svg { width: 16px; height: 16px; transition: all 0.3s ease; }
         .like-btn { right: 15px; }
         .like-btn svg { fill: rgba(255, 255, 255, 0.2); stroke: #fff; stroke-width: 2px; }
@@ -192,10 +224,12 @@
         
         .lightbox-content-box img, .lightbox-content-box video { max-width: 100%; max-height: 90vh; object-fit: contain; border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative; z-index: 1; }
         
-        .lightbox-close { position: absolute; top: 20px; right: 30px; font-size: 3rem; color: #fff; cursor: pointer; z-index: 3001; transition: color 0.2s, transform 0.3s; line-height: 1; will-change: transform; }
+        .lightbox-close { position: absolute; top: 20px; right: 30px; font-size: 3rem; color: #fff; cursor: pointer; z-index: 3001; transition: color 0.2s, transform 0.15s; line-height: 1; will-change: transform; }
         .lightbox-close:hover { color: #a8a8a8; transform: rotate(90deg); }
-        .nav-arrow { position: absolute; top: 50%; transform: translate3d(0, -50%, 0); font-size: 2.5rem; color: rgba(255,255,255,0.4); cursor: pointer; padding: 20px; user-select: none; z-index: 3001; transition: color 0.2s, transform 0.3s; will-change: transform, color; }
+        .lightbox-close:active { transform: scale(0.9) rotate(90deg); }
+        .nav-arrow { position: absolute; top: 50%; transform: translate3d(0, -50%, 0); font-size: 2.5rem; color: rgba(255,255,255,0.4); cursor: pointer; padding: 20px; user-select: none; z-index: 3001; transition: color 0.2s, transform 0.15s; will-change: transform, color; }
         .nav-arrow:hover { color: #fff; transform: translate3d(0, -50%, 0) scale(1.15); }
+        .nav-arrow:active { transform: translate3d(0, -50%, 0) scale(0.95); }
         .nav-prev { left: 20px; }
         .nav-next { right: 20px; }
         .lightbox-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 0.9rem; letter-spacing: 2px; color: #666; z-index: 3001; }
@@ -241,34 +275,35 @@
            移动端深度适配 (极速反馈与防抖布局)
            =================================================== */
         @media (max-width: 768px) {
-            /* 基础滚动与布局调整 */
             section { padding: 80px 6%; }
             .hero-title { font-size: 2.4rem; }
-            #home { background-attachment: scroll; } /* 消除 iOS 滚动视差带来的严重卡顿 */
+            
+            #home { 
+                background-attachment: scroll !important; 
+                background-position: center center !important; 
+                background-size: cover !important;
+            } 
 
-            /* 导航与菜单联动 */
             header { padding: 15px 5%; }
+            header.scrolled { padding: 10px 5%; }
+            
             .menu-toggle { display: flex; position: absolute; right: 5%; }
-            nav ul { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background-color: #0b0b0b; flex-direction: column; justify-content: center; align-items: center; gap: 36px; transform: translate3d(0, -100%, 0); opacity: 0; transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform, opacity; z-index: -1; }
+            nav ul { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background-color: #0b0b0b; flex-direction: column; justify-content: center; align-items: center; gap: 36px; transform: translate3d(0, -100%, 0); opacity: 0; transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1); z-index: -1; }
             nav ul.active { transform: translate3d(0, 0, 0); opacity: 1; }
             nav ul li a { font-size: 1.3rem; }
             
-            /* 关于我们版块 */
             .about-wrapper { flex-direction: column; text-align: center; gap: 40px; }
             .about-img { width: 100%; max-width: 300px; height: 350px; }
             .about-title { font-size: 1.8rem; }
 
-            /* 作品集网格重构以适应小屏 */
             .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
             .gallery-item { aspect-ratio: 1 / 1; }
             .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 45%); align-items: flex-end; padding: 20px; justify-content: flex-start; }
             .gallery-overlay span { transform: translate3d(0,0,0); border-color: transparent; }
             
-            /* 弹窗与交互触控区放大 */
             .modal-grid { column-count: 1; } 
             .close-btn { right: 20px; top: 15px; font-size: 2.8rem; width: 44px; height: 44px; text-align: center; }
             
-            /* 操作按钮放大 */
             .action-btn { top: 12px; width: 40px; height: 40px; } 
             .like-btn { right: 12px; }
             .comment-btn { right: 60px; }
@@ -281,12 +316,17 @@
             .lightbox-close { top: 10px; right: 15px; padding: 10px; }
             .bgm-ctrl { bottom: 20px; left: 20px; width: 48px; height: 48px; }
 
-            /* 弹窗动画响应提速 */
-            .reveal-item { transition-duration: var(--transition-mobile) !important; }
+            .model-nav-arrow { font-size: 2rem; padding: 10px; width: 50px; text-align: center; }
+            .model-prev { left: 0px; }
+            .model-next { right: 0px; }
+            .model-info-panel { width: 85%; padding: 10px 15px; bottom: 15px; }
+
+            /* 移动端动画曲线优化，更加干脆利落 */
+            .reveal-item { transition-duration: var(--transition-mobile) !important; transform: translate3d(0, 30px, 0); }
+            
             .modal, .lightbox { transition-duration: 0.2s; }
             .media-wrapper { transition-duration: 0.25s; }
 
-            /* 移动端侧栏交互改为由下至上，体验更佳 */
             .comment-sidebar { width: 100%; right: 0; left: 0; top: auto; bottom: 0; height: 65vh; border-top: 1px solid rgba(255,255,255,0.08); border-left: none; transform: translate3d(0, 100%, 0); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
             .lightbox.comments-open .comment-sidebar { transform: translate3d(0, 0, 0); }
             .lightbox.comments-open .lightbox-content-box { transform: translate3d(0, -10vh, 0) scale(0.85); }
@@ -321,6 +361,7 @@
                 <li><a href="#" class="nav-link">首页</a></li>
                 <li><a href="#about" class="nav-link">关于</a></li> 
                 <li><a href="#portfolio" class="nav-link">作品集</a></li>
+                <li><a href="#model-gallery" class="nav-link">三维展示</a></li>
                 <li><a href="#map-view" class="nav-link">足迹</a></li>
                 <li><a href="#contact" class="nav-link">联系</a></li>
             </ul>
@@ -328,12 +369,14 @@
     </header>
 
     <section id="home">
-        <div class="avatar"></div>
-        <div class="hero-title-wrap">
-            <h1 class="hero-title">每一帧都是故事</h1>
+        <div class="home-content" id="home-content">
+            <div class="avatar"></div>
+            <div class="hero-title-wrap">
+                <h1 class="hero-title">每一帧都是故事</h1>
+            </div>
+            <p class="hero-subtitle">大光圈“摄”定风采世界，小快门“照”就经典瞬间</p>
+            <a href="#portfolio" class="btn">作品查看</a>
         </div>
-        <p class="hero-subtitle">大光圈“摄”定风采世界，小快门“照”就经典瞬间</p>
-        <a href="#portfolio" class="btn">作品查看</a>
     </section>
 
     <section id="about">
@@ -370,6 +413,32 @@
         </div>
     </section>
 
+    <section id="model-gallery">
+        <h2 class="section-title reveal-item">三维视觉探索</h2>
+        <div class="model-container reveal-item delay-1">
+            <div class="model-nav-arrow model-prev" id="model-prev">&#10094;</div>
+            <div class="model-counter" id="model-counter">1 / 1</div>
+            
+            <model-viewer id="main-model-viewer"
+                src="" 
+                camera-controls 
+                auto-rotate 
+                rotation-per-second="30deg"
+                shadow-intensity="1.5" 
+                environment-image="neutral"
+                exposure="1"
+                alt="三维模型展示">
+            </model-viewer>
+            
+            <div class="model-nav-arrow model-next" id="model-next">&#10095;</div>
+            
+            <div class="model-info-panel">
+                <h3 class="model-info-title" id="model-title-display">加载中...</h3>
+                <p class="model-info-desc" id="model-desc-display"></p>
+            </div>
+        </div>
+        </section>
+
     <section id="map-view">
         <h2 class="section-title reveal-item">光影足迹</h2>
         <div class="map-container reveal-item delay-1">
@@ -398,25 +467,17 @@
     <div id="lightbox" class="lightbox">
         <span class="lightbox-close" id="close-lightbox">&times;</span>
         <div class="nav-arrow nav-prev" id="lightbox-prev">&#10094;</div>
-        
         <div class="lightbox-content-box" id="lightbox-content-box"></div>
-        
         <div class="nav-arrow nav-next" id="lightbox-next">&#10095;</div>
         <div class="lightbox-counter" id="lightbox-counter">1 / 1</div>
 
         <div class="info-sidebar" id="info-sidebar">
-            <div class="info-header">
-                作品档案
-                <span class="close-info-btn" id="close-info-btn">&times;</span>
-            </div>
+            <div class="info-header">作品档案<span class="close-info-btn" id="close-info-btn">&times;</span></div>
             <div class="info-content" id="info-content"></div>
         </div>
 
         <div class="comment-sidebar" id="comment-sidebar">
-            <div class="comment-header">
-                全部评论
-                <span class="close-comments-btn" id="close-comments-btn">&times;</span>
-            </div>
+            <div class="comment-header">全部评论<span class="close-comments-btn" id="close-comments-btn">&times;</span></div>
             <div class="comment-list" id="comment-list"></div>
             <div class="comment-input-area">
                 <input type="text" id="comment-input" placeholder="写下你的想法...">
@@ -439,32 +500,40 @@
         // 视差滚动优化与导航栏动态效果
         let ticking = false;
         const header = document.getElementById('site-header');
+        const homeContent = document.getElementById('home-content');
+        
         window.addEventListener('scroll', () => {
             if (!ticking) {
                 window.requestAnimationFrame(() => {
                     const scrolled = window.pageYOffset;
                     
-                    // 仅在非移动端启用视差滚动，避免 iOS Safari 掉帧
-                    if (window.innerWidth > 768) {
-                        const home = document.getElementById('home');
-                        if (home) home.style.backgroundPositionY = `${scrolled * 0.35}px`;
+                    // 导航栏动画
+                    if (scrolled > 50) {
+                        header.classList.add('scrolled');
+                    } else {
+                        header.classList.remove('scrolled');
+                    }
+                    
+                    // 首页元素的滚动视觉差与褪影 (完美衔接模块过渡)
+                    if (homeContent && scrolled < window.innerHeight) {
+                        const opacity = 1 - (scrolled / (window.innerHeight * 0.5));
+                        const translateY = scrolled * 0.4;
+                        homeContent.style.opacity = opacity > 0 ? opacity : 0;
+                        homeContent.style.transform = `translate3d(0, ${translateY}px, 0)`;
                     }
 
-                    // 导航栏滚动紧凑模式
-                    if (scrolled > 50) {
-                        header.style.padding = '10px 5%';
-                        header.style.background = 'rgba(11, 11, 11, 0.95)';
-                    } else {
-                        header.style.padding = '20px 5%';
-                        header.style.background = 'rgba(11, 11, 11, 0.8)';
-                    }
                     ticking = false;
                 });
                 ticking = true;
             }
         }, { passive: true });
 
-        // 硬件加速动效监听器
+        // 硬件加速动效监听器 (优化移动端触发时机)
+        const observerOptions = {
+            threshold: 0.1,
+            // 移动端让模块在进入视口前 50px 就开始触发动画，防卡顿
+            rootMargin: window.innerWidth < 768 ? '0px 0px 50px 0px' : '0px 0px -50px 0px'
+        };
         const revealCallback = (entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -473,7 +542,7 @@
                 }
             });
         };
-        const revealObserver = new IntersectionObserver(revealCallback, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        const revealObserver = new IntersectionObserver(revealCallback, observerOptions);
         document.querySelectorAll('.reveal-item').forEach(item => revealObserver.observe(item));
 
         // 背景音乐系统
@@ -527,7 +596,7 @@
             }
         }, false);
 
-        // 数据区
+        // 作品集数据区
         const portfolioData = {
             "module1": { 
                 title: "人像艺术", 
@@ -568,7 +637,14 @@
                     { type: "image", src: "./DENG3852.jpg" }
                 ] 
             },
-            "module2": { title: "电影视频", items: [{ type: "video", src: "./348656.mp4" }, { type: "image", src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }, { type: "video", src: "./12.mp4" }] },
+            "module2": { 
+                title: "电影视频", 
+                items: [
+                    { type: "video", src: "./348656.mp4", poster: "./348656_cover.jpg" }, 
+                    { type: "image", src: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" }, 
+                    { type: "video", src: "./12.mp4", poster: "./12_cover.jpg" }
+                ] 
+            },
             "module3": { title: "城市烟火", items: [{ type: "image", src: "./photo-1780254865273-908136e98d5a.avif" }, { type: "image", src: "./photo-1780139883668-325a9b3b328d.avif" }, { type: "image", src: "./black-and-white-photography-animal-pet-portrait-cat-512255-pxhere.com.jpg" }, { type: "image", src: "./photo-1780516053602-7fc79c63ee6c.avif" }] },
             "module4": { 
                 title: "自然风光", 
@@ -588,6 +664,64 @@
                 ] 
             }
         };
+
+        // 极速响应：无限 3D 模型配置与切换、预加载逻辑
+        const modelsData = [
+            { src: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", title: "宇航员漫步", desc: "探索未知的太空边界与科幻视觉" },
+            { src: "https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb", title: "阿波罗宇航服", desc: "致敬人类第一次登月计划" },
+            { src: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb", title: "动态交互机器人", desc: "工业设计与三维动画的结合" }
+        ];
+
+        let currentModelIndex = 0;
+        const mainModelViewer = document.getElementById('main-model-viewer');
+        const modelTitleDisplay = document.getElementById('model-title-display');
+        const modelDescDisplay = document.getElementById('model-desc-display');
+        const modelCounter = document.getElementById('model-counter');
+        const modelPrevBtn = document.getElementById('model-prev');
+        const modelNextBtn = document.getElementById('model-next');
+
+        mainModelViewer.addEventListener('load', () => {
+            if (modelsData.length > 0) {
+                modelTitleDisplay.innerHTML = modelsData[currentModelIndex].title;
+            }
+        });
+
+        function preloadNextModel(index) {
+            const nextIndex = (index + 1) % modelsData.length;
+            const nextSrc = modelsData[nextIndex].src;
+            if (!document.querySelector(`link[href="${nextSrc}"]`)) {
+                const link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'fetch';
+                link.crossOrigin = 'anonymous';
+                link.href = nextSrc;
+                document.head.appendChild(link);
+            }
+        }
+
+        function loadModel(index) {
+            if (modelsData.length === 0) return;
+            const model = modelsData[index];
+            
+            modelTitleDisplay.innerHTML = `${model.title} <span style="font-size:0.8em; color:#888; font-weight:normal;">(加载中...)</span>`;
+            modelDescDisplay.textContent = model.desc;
+            modelCounter.textContent = `${index + 1} / ${modelsData.length}`;
+            
+            mainModelViewer.src = model.src;
+            preloadNextModel(index);
+        }
+
+        modelPrevBtn.addEventListener('click', () => {
+            currentModelIndex = (currentModelIndex - 1 + modelsData.length) % modelsData.length;
+            loadModel(currentModelIndex);
+        });
+
+        modelNextBtn.addEventListener('click', () => {
+            currentModelIndex = (currentModelIndex + 1) % modelsData.length;
+            loadModel(currentModelIndex);
+        });
+
+        loadModel(0);
 
         // DOM 元素与外部链接绑定
         const rootStyles = getComputedStyle(document.documentElement);
@@ -667,8 +801,13 @@
                             domElement.src = mediaItem.src;
                             domElement.muted = true;
                             domElement.loop = true;
-                            domElement.playsInline = true;
                             domElement.autoplay = true; 
+                            domElement.setAttribute('playsinline', 'true');
+                            domElement.setAttribute('webkit-playsinline', 'true');
+                            domElement.setAttribute('x5-video-player-type', 'h5');
+                            domElement.setAttribute('x5-playsinline', 'true');
+                            domElement.setAttribute('preload', 'metadata');
+                            if (mediaItem.poster) domElement.setAttribute('poster', mediaItem.poster);
                         } else {
                             domElement = document.createElement('img');
                             domElement.src = mediaItem.src;
