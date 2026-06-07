@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <script type="module" src="https://cdnjs.cloudflare.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
     <style>
         /* ===================================================
@@ -40,10 +40,11 @@
 
         /* 防下载核心 CSS */
         img, video { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; }
-        .gallery-item::after, .media-wrapper::after, .lightbox-content-box::after { content: ''; position: absolute; inset: 0; z-index: 2; }
+        .gallery-item::after, .media-wrapper::after, .lightbox-content-box::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;}
         .gallery-overlay { z-index: 3; }
         .action-btn { z-index: 10; }
-        .media-wrapper video, .lightbox-content-box video { position: relative; z-index: 10; } 
+        .media-wrapper video, .lightbox-content-box video, .lightbox-content-box model-viewer { position: relative; z-index: 10; } 
+        .lightbox-content-box::after { pointer-events: none; } 
 
         .reveal-item { opacity: 0; transform: translate3d(0, 50px, 0) scale(0.98); will-change: transform, opacity; transition: opacity var(--transition-pc), transform var(--transition-pc); }
         .reveal-item.revealed { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
@@ -51,6 +52,7 @@
         .delay-2 { transition-delay: 0.2s; }
         .delay-3 { transition-delay: 0.3s; }
         .delay-4 { transition-delay: 0.4s; }
+        .delay-5 { transition-delay: 0.5s; }
 
         /* ===================================================
            导航与首屏
@@ -85,7 +87,7 @@
         @keyframes fadeInBlur { to { opacity: 1; transform: translate3d(0,0,0); filter: blur(0); } }
 
         /* ===================================================
-           内容版块 (关于、作品集、3D展示、足迹、联系)
+           内容版块 (关于、作品集、足迹、联系)
            =================================================== */
         section { padding: 120px 5%; }
         #about { background-color: #111; display: flex; justify-content: center; align-items: center; }
@@ -111,17 +113,7 @@
         .gallery-overlay span { font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid transparent; padding-bottom: 4px; transform: translate3d(0, 15px, 0); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.4s; }
         .gallery-item:hover .gallery-overlay span { transform: translate3d(0,0,0); border-color: #fff; }
 
-        /* 3D 模型展示模块样式 */
-        #model-gallery { background-color: #111; text-align: center; }
-        .model-container { width: 100%; max-width: 1200px; margin: 0 auto; height: 60vh; min-height: 450px; border-radius: 8px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 1; position: relative; border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%); display: flex; justify-content: center; align-items: center; }
-        model-viewer { width: 100%; height: 100%; --poster-color: transparent; outline: none; transition: opacity 0.3s ease; }
-        
-        .model-switcher { display: flex; justify-content: center; gap: 16px; margin-top: 30px; flex-wrap: wrap; }
-        .model-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #aaa; padding: 10px 28px; border-radius: 30px; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); backdrop-filter: blur(5px); }
-        .model-btn:hover { color: #fff; border-color: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
-        .model-btn.active { background: #fff; color: #000; border-color: #fff; font-weight: bold; box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2); }
-
-        #map-view { background-color: #0b0b0b; text-align: center; }
+        #map-view { background-color: #111; text-align: center; }
         .map-container { width: 100%; max-width: 1200px; margin: 0 auto; height: 50vh; min-height: 400px; border-radius: 8px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 1; position: relative; border: 1px solid rgba(255,255,255,0.05); }
         #photo-map { width: 100%; height: 100%; background-color: #0b0b0b; }
         .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #1a1a1a !important; color: #fff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important; }
@@ -170,10 +162,54 @@
         .modal.active .media-wrapper:nth-child(2) { transition-delay: 0.1s; }
         .modal.active .media-wrapper:nth-child(3) { transition-delay: 0.15s; }
         .modal.active .media-wrapper:nth-child(4) { transition-delay: 0.2s; }
+        .modal.active .media-wrapper:nth-child(5) { transition-delay: 0.25s; }
 
         .media-wrapper img, .media-wrapper video { width: 100%; display: block; border-radius: 4px; transition: transform 0.4s ease; position: relative; z-index: 1; will-change: transform; }
         .media-wrapper:hover img, .media-wrapper:hover video { transform: scale(1.02) translate3d(0,0,0); }
-        .media-wrapper video { padding-bottom: 2px; }
+
+        /* ===================================================
+           更新：三维模型直出卡片 CSS
+           =================================================== */
+        .media-wrapper.direct-model-card {
+            aspect-ratio: auto; 
+            display: block;
+            padding-bottom: 0;
+            background: #111;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            cursor: default;
+        }
+        .direct-model-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+       .direct-model-container model-viewer {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* 设置宽高比为 1:1，确保模型区域为正方形 */
+            height: auto;        /* 移除固定的 350px 高度，使其自适应 */
+            background-color: #1a1a1a;
+            --poster-color: transparent;
+        }
+        .direct-model-loading {
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100%; 
+            color: #666; 
+            font-size: 0.85rem;
+        }
+        .direct-model-title {
+            text-align: center;
+            padding: 20px 15px;
+            font-size: 1.05rem;
+            color: #eee;
+            letter-spacing: 2px;
+            font-weight: 500;
+            background: #111;
+        }
 
         /* 悬浮操作栏 */
         .action-btn { position: absolute; top: 15px; width: 36px; height: 36px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); transform: translate3d(0,0,0); will-change: transform, background; }
@@ -322,7 +358,6 @@
                 <li><a href="#" class="nav-link">首页</a></li>
                 <li><a href="#about" class="nav-link">关于</a></li> 
                 <li><a href="#portfolio" class="nav-link">作品集</a></li>
-                <li><a href="#model-gallery" class="nav-link">三维展示</a></li>
                 <li><a href="#map-view" class="nav-link">足迹</a></li>
                 <li><a href="#contact" class="nav-link">联系</a></li>
             </ul>
@@ -369,31 +404,10 @@
                 <img src="./headphones_audio_black_134032_3840x2160.jpg" alt="封面4">
                 <div class="gallery-overlay"><span>自然风光</span></div>
             </div>
-        </div>
-    </section>
-
-    <section id="model-gallery">
-        <h2 class="section-title reveal-item">三维视觉探索</h2>
-        <div class="model-container reveal-item delay-1">
-            <model-viewer 
-                id="main-model-viewer"
-                src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-                camera-controls 
-                auto-rotate 
-                rotation-per-second="30deg"
-                shadow-intensity="1.5" 
-                environment-image="neutral"
-                exposure="1"
-                loading="lazy"
-                touch-action="pan-y"
-                alt="三维模型展示">
-            </model-viewer>
-        </div>
-        
-        <div class="model-switcher reveal-item delay-2">
-            <button class="model-btn active" data-src="https://modelviewer.dev/shared-assets/models/Astronaut.glb">星际漫游</button>
-            <button class="model-btn" data-src="https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb">战损头盔</button>
-            <button class="model-btn" data-src="https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb">阿波罗计划</button>
+            <div class="gallery-item reveal-item delay-5" data-module="module5">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop" alt="封面5">
+                <div class="gallery-overlay"><span>三维视觉</span></div>
+            </div>
         </div>
     </section>
 
@@ -489,7 +503,7 @@
             }
         }, { passive: true });
 
-        // 硬件加速动效监听器 (已优化根边距，使视觉更连贯)
+        // 硬件加速动效监听器
         const revealCallback = (entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -500,29 +514,6 @@
         };
         const revealObserver = new IntersectionObserver(revealCallback, { threshold: 0.1, rootMargin: '0px 0px -10% 0px' });
         document.querySelectorAll('.reveal-item').forEach(item => revealObserver.observe(item));
-
-        // ===================================================
-        // 三维模型切换交互逻辑
-        // ===================================================
-        const mainModelViewer = document.getElementById('main-model-viewer');
-        const modelBtns = document.querySelectorAll('.model-btn');
-
-        modelBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (btn.classList.contains('active')) return;
-
-                modelBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                mainModelViewer.style.opacity = 0.3;
-
-                setTimeout(() => {
-                    mainModelViewer.src = btn.getAttribute('data-src');
-                    mainModelViewer.cameraOrbit = "0deg 75deg 105%";
-                    mainModelViewer.style.opacity = 1;
-                }, 300);
-            });
-        });
 
         // 背景音乐系统
         const bgm = document.getElementById('site-bgm');
@@ -633,14 +624,34 @@
                         src: "./photo-1776965767257-6b07d891a0a3.avif",
                         info: {
                             title: "暮光之城",
-                            location: "云南省，香格里拉",
-                            coords: [27.8258, 99.7065],
+                            location: "上海市，静安区",
+                            coords: [31.2288, 121.4354],
                         }
                     }, 
                     { type: "image", src: "./photo-1779113940974-97e682627830.avif" }, 
                     { type: "image", src: "./tree-nature-branch-blossom-winter-plant-615744-pxhere.com.jpg" }, 
                     { type: "image", src: "./photo-1778434505732-baa2e78041a6.avif" }
                 ] 
+            },
+            "module5": {
+                title: "三维视觉探索",
+                items: [
+                    { 
+                        type: "model", 
+                        src: "./cat.glb",
+                        info: { title: "乖萌小猫", story: "三维模型展示测试 - 可爱猫" }
+                    },
+                    { 
+                        type: "model", 
+                        src: "https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+                        info: { title: "战损头盔", story: "高精度 PBR 材质展示" }
+                    },
+                    { 
+                        type: "model", 
+                        src: "https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb",
+                        info: { title: "阿波罗计划", story: "历史人物三维扫描重建" }
+                    }
+                ]
             }
         };
 
@@ -734,6 +745,37 @@
                             if (mediaItem.poster) {
                                 domElement.setAttribute('poster', mediaItem.poster);
                             }
+                        } else if (mediaItem.type === 'model') {
+                            wrapper.classList.add('direct-model-card');
+                            const titleText = mediaItem.info && mediaItem.info.title ? mediaItem.info.title : '未知模型';
+                            
+                            // 更新：移除内联的 camera-controls 避免误触，并添加隐形遮罩层用于捕获点击
+                            wrapper.innerHTML = `
+                                <div class="direct-model-container" style="position: relative;">
+                                    <model-viewer 
+                                        src="${mediaItem.src}" 
+                                        alt="${titleText}"
+                                        auto-rotate 
+                                        shadow-intensity="1" 
+                                        environment-image="neutral"
+                                        interaction-prompt="none"
+                                        style="pointer-events: none;" 
+                                    >
+                                        <div slot="poster" class="direct-model-loading">3D模型加载中...</div>
+                                    </model-viewer>
+                                    <div class="direct-model-title">${titleText}</div>
+                                    <div class="model-click-mask" style="position: absolute; inset: 0; z-index: 5; cursor: pointer;" title="点击进入沉浸模式"></div>
+                                </div>
+                            `;
+
+                            // 更新：将阻止事件改为调用 openLightbox 打开独立界面
+                            wrapper.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                openLightbox(data.items, index, false, false);
+                            });
+
+                            fragment.appendChild(wrapper);
+                            return; 
                         } else {
                             domElement = document.createElement('img');
                             domElement.src = mediaItem.src;
@@ -846,6 +888,26 @@
                     bgm.pause();
                     bgmBtn.classList.remove('playing');
                     bgmAutoPausedByVideo = true; 
+                }
+            } else if (currentItem.type === 'model') {
+                const modelViewer = document.createElement('model-viewer');
+                modelViewer.src = currentItem.src;
+                modelViewer.setAttribute('camera-controls', '');
+                modelViewer.setAttribute('auto-rotate', '');
+                modelViewer.setAttribute('shadow-intensity', '1.5');
+                modelViewer.setAttribute('environment-image', 'neutral');
+                
+                // 【核心修改】：将 touch-action 设置为 none，彻底释放手机端的单指全向旋转和双指缩放
+                modelViewer.setAttribute('touch-action', 'none'); 
+                
+                modelViewer.style.width = '85vw';
+                modelViewer.style.height = '85vh';
+                modelViewer.style.maxWidth = '1200px';
+                lightboxContentBox.appendChild(modelViewer);
+                
+                if (bgmAutoPausedByVideo) {
+                    bgm.play().then(() => { bgmBtn.classList.add('playing'); }).catch(() => {});
+                    bgmAutoPausedByVideo = false; 
                 }
             } else {
                 const img = document.createElement('img');
